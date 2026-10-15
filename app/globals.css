@@ -1,0 +1,985 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ===========================================================================
+   Fonts — every face is loaded in the root layout; `data-font` picks one.
+   =========================================================================== */
+
+:root {
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+}
+:root[data-font='inter'] { --font-sans: var(--font-inter); }
+:root[data-font='dm-sans'] { --font-sans: var(--font-dm-sans); }
+:root[data-font='outfit'] { --font-sans: var(--font-outfit); }
+:root[data-font='figtree'] { --font-sans: var(--font-figtree); }
+:root[data-font='jakarta'] { --font-sans: var(--font-jakarta); }
+:root[data-font='public-sans'] { --font-sans: var(--font-public-sans); }
+:root[data-font='space-grotesk'] {
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+/* ===========================================================================
+   Default preset — calm neutrals, indigo accent, crisp hairline borders.
+   The categorical chart ramp is validated for lightness band, chroma floor,
+   CVD separation and contrast against each mode's surface; re-run that check
+   before changing any step.
+   =========================================================================== */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.995 0.002 250);
+  --foreground: oklch(0.21 0.02 265);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 265);
+
+  --primary: oklch(0.52 0.2 277);
+  --primary-foreground: oklch(0.99 0.005 277);
+
+  --secondary: oklch(0.967 0.006 265);
+  --secondary-foreground: oklch(0.3 0.025 265);
+
+  --muted: oklch(0.967 0.006 265);
+  --muted-foreground: oklch(0.52 0.02 265);
+
+  --accent: oklch(0.955 0.015 277);
+  --accent-foreground: oklch(0.36 0.1 277);
+
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 25);
+
+  --border: oklch(0.915 0.008 265);
+  --input: oklch(0.905 0.008 265);
+  --ring: oklch(0.52 0.2 277);
+
+  --chart-1: oklch(0.55 0.19 277);
+  --chart-2: oklch(0.6 0.13 196);
+  --chart-3: oklch(0.66 0.15 80);
+  --chart-4: oklch(0.6 0.2 15);
+  --chart-5: oklch(0.58 0.17 310);
+
+  --sidebar: oklch(0.985 0.003 265);
+  --sidebar-foreground: oklch(0.3 0.02 265);
+  --sidebar-primary: oklch(0.52 0.2 277);
+  --sidebar-primary-foreground: oklch(0.99 0.005 277);
+  --sidebar-accent: oklch(0.945 0.015 277);
+  --sidebar-accent-foreground: oklch(0.34 0.1 277);
+  --sidebar-border: oklch(0.915 0.008 265);
+  --sidebar-ring: oklch(0.52 0.2 277);
+
+  /* Surface treatment knobs the presets below rewrite. */
+  --surface-blur: 0px;
+  --surface-border-width: 1px;
+  --page-backdrop: none;
+
+  --shadow-2xs: 0 1px 2px 0 oklch(0.21 0.02 265 / 4%);
+  --shadow-xs: 0 1px 2px 0 oklch(0.21 0.02 265 / 5%);
+  --shadow-sm: 0 1px 2px 0 oklch(0.21 0.02 265 / 6%), 0 1px 1px -1px oklch(0.21 0.02 265 / 4%);
+  --shadow: 0 1px 3px 0 oklch(0.21 0.02 265 / 7%), 0 1px 2px -1px oklch(0.21 0.02 265 / 5%);
+  --shadow-md: 0 4px 10px -2px oklch(0.21 0.02 265 / 8%), 0 2px 4px -2px oklch(0.21 0.02 265 / 5%);
+  --shadow-lg: 0 10px 24px -6px oklch(0.21 0.02 265 / 10%), 0 4px 8px -4px oklch(0.21 0.02 265 / 6%);
+  --shadow-xl: 0 20px 40px -10px oklch(0.21 0.02 265 / 12%);
+  --shadow-2xl: 0 28px 60px -14px oklch(0.21 0.02 265 / 18%);
+}
+
+.dark {
+  --background: oklch(0.175 0.015 265);
+  --foreground: oklch(0.96 0.005 265);
+
+  --card: oklch(0.215 0.018 265);
+  --card-foreground: oklch(0.96 0.005 265);
+  --popover: oklch(0.225 0.018 265);
+  --popover-foreground: oklch(0.96 0.005 265);
+
+  --primary: oklch(0.68 0.17 277);
+  --primary-foreground: oklch(0.17 0.03 277);
+
+  --secondary: oklch(0.27 0.02 265);
+  --secondary-foreground: oklch(0.95 0.005 265);
+
+  --muted: oklch(0.265 0.018 265);
+  --muted-foreground: oklch(0.7 0.018 265);
+
+  --accent: oklch(0.31 0.045 277);
+  --accent-foreground: oklch(0.93 0.03 277);
+
+  --destructive: oklch(0.67 0.2 22);
+  --destructive-foreground: oklch(0.16 0.03 22);
+
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.68 0.17 277);
+
+  --chart-1: oklch(0.62 0.17 277);
+  --chart-2: oklch(0.63 0.12 196);
+  --chart-3: oklch(0.66 0.14 85);
+  --chart-4: oklch(0.61 0.18 15);
+  --chart-5: oklch(0.6 0.16 312);
+
+  --sidebar: oklch(0.2 0.017 265);
+  --sidebar-foreground: oklch(0.93 0.005 265);
+  --sidebar-primary: oklch(0.68 0.17 277);
+  --sidebar-primary-foreground: oklch(0.17 0.03 277);
+  --sidebar-accent: oklch(0.3 0.04 277);
+  --sidebar-accent-foreground: oklch(0.93 0.03 277);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.68 0.17 277);
+
+  --shadow-2xs: 0 1px 2px 0 oklch(0 0 0 / 30%);
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 35%);
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 40%), 0 1px 1px -1px oklch(0 0 0 / 30%);
+  --shadow: 0 1px 3px 0 oklch(0 0 0 / 45%), 0 1px 2px -1px oklch(0 0 0 / 35%);
+  --shadow-md: 0 4px 10px -2px oklch(0 0 0 / 50%), 0 2px 4px -2px oklch(0 0 0 / 35%);
+  --shadow-lg: 0 10px 24px -6px oklch(0 0 0 / 55%), 0 4px 8px -4px oklch(0 0 0 / 40%);
+  --shadow-xl: 0 20px 40px -10px oklch(0 0 0 / 60%);
+  --shadow-2xl: 0 28px 60px -14px oklch(0 0 0 / 70%);
+}
+
+/* ===========================================================================
+   Preset: Neobrutalism — zero radius, black outlines, offset hard shadows.
+   =========================================================================== */
+
+:root[data-theme-preset='neobrutalism'] {
+  --radius: 0rem;
+  --surface-border-width: 2px;
+
+  --background: oklch(0.985 0.012 95);
+  --foreground: oklch(0.16 0.01 60);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.01 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.01 60);
+
+  --primary: oklch(0.63 0.21 32);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.91 0.16 98);
+  --secondary-foreground: oklch(0.16 0.01 60);
+
+  --muted: oklch(0.955 0.012 95);
+  --muted-foreground: oklch(0.42 0.02 60);
+
+  --accent: oklch(0.9 0.14 98);
+  --accent-foreground: oklch(0.16 0.01 60);
+
+  --destructive: oklch(0.55 0.23 28);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.16 0.01 60);
+  --input: oklch(0.16 0.01 60);
+  --ring: oklch(0.63 0.21 32);
+
+  --chart-1: oklch(0.6 0.21 32);
+  --chart-2: oklch(0.6 0.13 215);
+  --chart-3: oklch(0.65 0.16 128);
+  --chart-4: oklch(0.63 0.19 330);
+  --chart-5: oklch(0.58 0.14 265);
+
+  --sidebar: oklch(0.955 0.02 95);
+  --sidebar-foreground: oklch(0.16 0.01 60);
+  --sidebar-primary: oklch(0.63 0.21 32);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.9 0.14 98);
+  --sidebar-accent-foreground: oklch(0.16 0.01 60);
+  --sidebar-border: oklch(0.16 0.01 60);
+  --sidebar-ring: oklch(0.63 0.21 32);
+
+  --shadow-2xs: 2px 2px 0 0 oklch(0.16 0.01 60);
+  --shadow-xs: 2px 2px 0 0 oklch(0.16 0.01 60);
+  --shadow-sm: 3px 3px 0 0 oklch(0.16 0.01 60);
+  --shadow: 4px 4px 0 0 oklch(0.16 0.01 60);
+  --shadow-md: 5px 5px 0 0 oklch(0.16 0.01 60);
+  --shadow-lg: 6px 6px 0 0 oklch(0.16 0.01 60);
+  --shadow-xl: 8px 8px 0 0 oklch(0.16 0.01 60);
+  --shadow-2xl: 10px 10px 0 0 oklch(0.16 0.01 60);
+}
+
+.dark:root[data-theme-preset='neobrutalism'] {
+  --background: oklch(0.17 0.015 80);
+  --foreground: oklch(0.97 0.012 95);
+
+  --card: oklch(0.23 0.018 80);
+  --card-foreground: oklch(0.97 0.012 95);
+  --popover: oklch(0.23 0.018 80);
+  --popover-foreground: oklch(0.97 0.012 95);
+
+  --primary: oklch(0.7 0.18 36);
+  --primary-foreground: oklch(0.16 0.015 36);
+
+  --secondary: oklch(0.85 0.17 98);
+  --secondary-foreground: oklch(0.16 0.015 80);
+
+  --muted: oklch(0.26 0.018 80);
+  --muted-foreground: oklch(0.76 0.02 90);
+
+  --accent: oklch(0.34 0.06 95);
+  --accent-foreground: oklch(0.95 0.08 98);
+
+  --destructive: oklch(0.65 0.21 28);
+  --destructive-foreground: oklch(0.15 0.02 28);
+
+  --border: oklch(0.97 0.012 95);
+  --input: oklch(0.97 0.012 95);
+  --ring: oklch(0.7 0.18 36);
+
+  --chart-1: oklch(0.68 0.19 36);
+  --chart-2: oklch(0.66 0.12 215);
+  --chart-3: oklch(0.7 0.15 128);
+  --chart-4: oklch(0.67 0.18 330);
+  --chart-5: oklch(0.64 0.14 265);
+
+  --sidebar: oklch(0.2 0.018 80);
+  --sidebar-foreground: oklch(0.97 0.012 95);
+  --sidebar-primary: oklch(0.7 0.18 36);
+  --sidebar-primary-foreground: oklch(0.16 0.015 36);
+  --sidebar-accent: oklch(0.34 0.06 95);
+  --sidebar-accent-foreground: oklch(0.95 0.08 98);
+  --sidebar-border: oklch(0.97 0.012 95);
+  --sidebar-ring: oklch(0.7 0.18 36);
+
+  --shadow-2xs: 2px 2px 0 0 oklch(0.97 0.012 95);
+  --shadow-xs: 2px 2px 0 0 oklch(0.97 0.012 95);
+  --shadow-sm: 3px 3px 0 0 oklch(0.97 0.012 95);
+  --shadow: 4px 4px 0 0 oklch(0.97 0.012 95);
+  --shadow-md: 5px 5px 0 0 oklch(0.97 0.012 95);
+  --shadow-lg: 6px 6px 0 0 oklch(0.97 0.012 95);
+  --shadow-xl: 8px 8px 0 0 oklch(0.97 0.012 95);
+  --shadow-2xl: 10px 10px 0 0 oklch(0.97 0.012 95);
+}
+
+/* ===========================================================================
+   Preset: Soft pop — generous radius, violet primary, warm pastel accents.
+   =========================================================================== */
+
+:root[data-theme-preset='soft-pop'] {
+  --radius: 1rem;
+
+  --background: oklch(0.985 0.008 300);
+  --foreground: oklch(0.24 0.035 290);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.035 290);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.035 290);
+
+  --primary: oklch(0.55 0.23 295);
+  --primary-foreground: oklch(0.99 0.005 295);
+
+  --secondary: oklch(0.95 0.035 300);
+  --secondary-foreground: oklch(0.34 0.1 295);
+
+  --muted: oklch(0.955 0.02 300);
+  --muted-foreground: oklch(0.52 0.04 290);
+
+  --accent: oklch(0.93 0.09 95);
+  --accent-foreground: oklch(0.34 0.08 70);
+
+  --destructive: oklch(0.58 0.22 15);
+  --destructive-foreground: oklch(0.99 0.005 15);
+
+  --border: oklch(0.91 0.025 300);
+  --input: oklch(0.9 0.025 300);
+  --ring: oklch(0.55 0.23 295);
+
+  --chart-1: oklch(0.55 0.22 295);
+  --chart-2: oklch(0.62 0.14 195);
+  --chart-3: oklch(0.68 0.15 75);
+  --chart-4: oklch(0.6 0.2 5);
+  --chart-5: oklch(0.6 0.15 150);
+
+  --sidebar: oklch(0.97 0.018 300);
+  --sidebar-foreground: oklch(0.32 0.04 290);
+  --sidebar-primary: oklch(0.55 0.23 295);
+  --sidebar-primary-foreground: oklch(0.99 0.005 295);
+  --sidebar-accent: oklch(0.93 0.05 300);
+  --sidebar-accent-foreground: oklch(0.36 0.1 295);
+  --sidebar-border: oklch(0.91 0.025 300);
+  --sidebar-ring: oklch(0.55 0.23 295);
+
+  --shadow-2xs: 0 2px 4px 0 oklch(0.4 0.12 295 / 6%);
+  --shadow-xs: 0 2px 6px 0 oklch(0.4 0.12 295 / 8%);
+  --shadow-sm: 0 4px 10px -2px oklch(0.4 0.12 295 / 10%);
+  --shadow: 0 6px 16px -4px oklch(0.4 0.12 295 / 12%);
+  --shadow-md: 0 10px 24px -6px oklch(0.4 0.12 295 / 14%);
+  --shadow-lg: 0 16px 36px -10px oklch(0.4 0.12 295 / 18%);
+  --shadow-xl: 0 24px 50px -14px oklch(0.4 0.12 295 / 22%);
+  --shadow-2xl: 0 32px 70px -18px oklch(0.4 0.12 295 / 26%);
+}
+
+.dark:root[data-theme-preset='soft-pop'] {
+  --background: oklch(0.185 0.03 295);
+  --foreground: oklch(0.96 0.012 300);
+
+  --card: oklch(0.235 0.035 295);
+  --card-foreground: oklch(0.96 0.012 300);
+  --popover: oklch(0.245 0.035 295);
+  --popover-foreground: oklch(0.96 0.012 300);
+
+  --primary: oklch(0.72 0.17 295);
+  --primary-foreground: oklch(0.18 0.05 295);
+
+  --secondary: oklch(0.3 0.05 295);
+  --secondary-foreground: oklch(0.95 0.02 300);
+
+  --muted: oklch(0.285 0.035 295);
+  --muted-foreground: oklch(0.74 0.03 300);
+
+  --accent: oklch(0.36 0.07 85);
+  --accent-foreground: oklch(0.94 0.09 95);
+
+  --destructive: oklch(0.68 0.19 15);
+  --destructive-foreground: oklch(0.17 0.04 15);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 17%);
+  --ring: oklch(0.72 0.17 295);
+
+  --chart-1: oklch(0.66 0.18 295);
+  --chart-2: oklch(0.64 0.13 195);
+  --chart-3: oklch(0.67 0.14 75);
+  --chart-4: oklch(0.62 0.19 5);
+  --chart-5: oklch(0.62 0.14 150);
+
+  --sidebar: oklch(0.21 0.035 295);
+  --sidebar-foreground: oklch(0.94 0.012 300);
+  --sidebar-primary: oklch(0.72 0.17 295);
+  --sidebar-primary-foreground: oklch(0.18 0.05 295);
+  --sidebar-accent: oklch(0.32 0.06 295);
+  --sidebar-accent-foreground: oklch(0.94 0.03 300);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.72 0.17 295);
+
+  --shadow-sm: 0 4px 10px -2px oklch(0 0 0 / 45%);
+  --shadow: 0 6px 16px -4px oklch(0 0 0 / 50%);
+  --shadow-md: 0 10px 24px -6px oklch(0 0 0 / 55%);
+  --shadow-lg: 0 16px 36px -10px oklch(0 0 0 / 60%);
+  --shadow-xl: 0 24px 50px -14px oklch(0 0 0 / 65%);
+}
+
+/* ===========================================================================
+   Preset: Glass — translucent panels over a soft gradient backdrop.
+   Surfaces carry alpha, so the page backdrop below shows through.
+   =========================================================================== */
+
+:root[data-theme-preset='glassmorphism'] {
+  --radius: 1rem;
+  --surface-blur: 16px;
+
+  --background: oklch(0.97 0.02 265);
+  --foreground: oklch(0.24 0.035 268);
+
+  --card: oklch(1 0 0 / 62%);
+  --card-foreground: oklch(0.24 0.035 268);
+  --popover: oklch(1 0 0 / 85%);
+  --popover-foreground: oklch(0.24 0.035 268);
+
+  --primary: oklch(0.52 0.21 272);
+  --primary-foreground: oklch(0.99 0.005 272);
+
+  --secondary: oklch(1 0 0 / 55%);
+  --secondary-foreground: oklch(0.32 0.06 268);
+
+  --muted: oklch(1 0 0 / 45%);
+  --muted-foreground: oklch(0.47 0.04 268);
+
+  --accent: oklch(0.88 0.07 272 / 60%);
+  --accent-foreground: oklch(0.33 0.12 272);
+
+  --destructive: oklch(0.58 0.22 20);
+  --destructive-foreground: oklch(0.99 0.005 20);
+
+  --border: oklch(1 0 0 / 55%);
+  --input: oklch(1 0 0 / 70%);
+  --ring: oklch(0.52 0.21 272);
+
+  --chart-1: oklch(0.54 0.2 272);
+  --chart-2: oklch(0.6 0.13 200);
+  --chart-3: oklch(0.66 0.15 80);
+  --chart-4: oklch(0.6 0.2 12);
+  --chart-5: oklch(0.58 0.17 318);
+
+  --sidebar: oklch(1 0 0 / 45%);
+  --sidebar-foreground: oklch(0.3 0.04 268);
+  --sidebar-primary: oklch(0.52 0.21 272);
+  --sidebar-primary-foreground: oklch(0.99 0.005 272);
+  --sidebar-accent: oklch(1 0 0 / 70%);
+  --sidebar-accent-foreground: oklch(0.33 0.1 272);
+  --sidebar-border: oklch(1 0 0 / 55%);
+  --sidebar-ring: oklch(0.52 0.21 272);
+
+  --page-backdrop:
+    radial-gradient(55rem 38rem at 6% -8%, oklch(0.72 0.21 272 / 62%), transparent 58%),
+    radial-gradient(48rem 32rem at 98% 2%, oklch(0.76 0.17 196 / 58%), transparent 60%),
+    radial-gradient(42rem 32rem at 55% 108%, oklch(0.78 0.16 330 / 52%), transparent 58%),
+    linear-gradient(160deg, oklch(0.95 0.04 272), oklch(0.96 0.03 210));
+
+  --shadow-2xs: 0 1px 2px 0 oklch(0.3 0.08 272 / 6%);
+  --shadow-xs: 0 2px 6px 0 oklch(0.3 0.08 272 / 8%);
+  --shadow-sm: 0 4px 14px -2px oklch(0.3 0.08 272 / 10%);
+  --shadow: 0 8px 24px -6px oklch(0.3 0.08 272 / 12%);
+  --shadow-md: 0 12px 32px -8px oklch(0.3 0.08 272 / 14%);
+  --shadow-lg: 0 20px 48px -12px oklch(0.3 0.08 272 / 18%);
+  --shadow-xl: 0 28px 64px -16px oklch(0.3 0.08 272 / 22%);
+  --shadow-2xl: 0 36px 80px -20px oklch(0.3 0.08 272 / 26%);
+}
+
+.dark:root[data-theme-preset='glassmorphism'] {
+  --background: oklch(0.17 0.03 268);
+  --foreground: oklch(0.96 0.008 268);
+
+  --card: oklch(0.3 0.03 268 / 48%);
+  --card-foreground: oklch(0.96 0.008 268);
+  --popover: oklch(0.24 0.03 268 / 92%);
+  --popover-foreground: oklch(0.96 0.008 268);
+
+  --primary: oklch(0.7 0.16 272);
+  --primary-foreground: oklch(0.17 0.04 272);
+
+  --secondary: oklch(0.36 0.03 268 / 50%);
+  --secondary-foreground: oklch(0.95 0.01 268);
+
+  --muted: oklch(0.34 0.03 268 / 45%);
+  --muted-foreground: oklch(0.76 0.02 268);
+
+  --accent: oklch(0.44 0.07 272 / 55%);
+  --accent-foreground: oklch(0.93 0.04 272);
+
+  --destructive: oklch(0.67 0.2 20);
+  --destructive-foreground: oklch(0.16 0.03 20);
+
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.7 0.16 272);
+
+  --chart-1: oklch(0.64 0.17 272);
+  --chart-2: oklch(0.63 0.12 200);
+  --chart-3: oklch(0.67 0.14 80);
+  --chart-4: oklch(0.62 0.18 12);
+  --chart-5: oklch(0.61 0.16 318);
+
+  --sidebar: oklch(0.26 0.03 268 / 50%);
+  --sidebar-foreground: oklch(0.93 0.008 268);
+  --sidebar-primary: oklch(0.7 0.16 272);
+  --sidebar-primary-foreground: oklch(0.17 0.04 272);
+  --sidebar-accent: oklch(0.4 0.05 272 / 55%);
+  --sidebar-accent-foreground: oklch(0.93 0.04 272);
+  --sidebar-border: oklch(1 0 0 / 14%);
+  --sidebar-ring: oklch(0.7 0.16 272);
+
+  --page-backdrop:
+    radial-gradient(55rem 38rem at 6% -8%, oklch(0.52 0.24 272 / 72%), transparent 58%),
+    radial-gradient(48rem 32rem at 98% 2%, oklch(0.48 0.18 196 / 62%), transparent 60%),
+    radial-gradient(42rem 32rem at 55% 108%, oklch(0.5 0.2 330 / 58%), transparent 58%),
+    linear-gradient(160deg, oklch(0.21 0.05 272), oklch(0.19 0.04 220));
+}
+
+/* ===========================================================================
+   Preset: Neumorphism — one surface colour, no borders, light and shadow do
+   all the work. Deliberately low contrast, so text stays on the ink tokens.
+   =========================================================================== */
+
+:root[data-theme-preset='neumorphism'] {
+  --radius: 1.1rem;
+  --surface-border-width: 0px;
+
+  --background: oklch(0.93 0.006 265);
+  --foreground: oklch(0.3 0.025 265);
+
+  --card: oklch(0.93 0.006 265);
+  --card-foreground: oklch(0.3 0.025 265);
+  --popover: oklch(0.945 0.006 265);
+  --popover-foreground: oklch(0.3 0.025 265);
+
+  --primary: oklch(0.52 0.16 272);
+  --primary-foreground: oklch(0.985 0.005 272);
+
+  --secondary: oklch(0.93 0.006 265);
+  --secondary-foreground: oklch(0.36 0.03 265);
+
+  --muted: oklch(0.915 0.006 265);
+  --muted-foreground: oklch(0.52 0.02 265);
+
+  --accent: oklch(0.9 0.02 272);
+  --accent-foreground: oklch(0.37 0.08 272);
+
+  --destructive: oklch(0.57 0.2 22);
+  --destructive-foreground: oklch(0.985 0.005 22);
+
+  --border: oklch(0.88 0.008 265);
+  --input: oklch(0.9 0.008 265);
+  --ring: oklch(0.52 0.16 272);
+
+  --chart-1: oklch(0.54 0.17 272);
+  --chart-2: oklch(0.59 0.12 198);
+  --chart-3: oklch(0.65 0.14 80);
+  --chart-4: oklch(0.59 0.19 15);
+  --chart-5: oklch(0.57 0.15 312);
+
+  --sidebar: oklch(0.93 0.006 265);
+  --sidebar-foreground: oklch(0.34 0.025 265);
+  --sidebar-primary: oklch(0.52 0.16 272);
+  --sidebar-primary-foreground: oklch(0.985 0.005 272);
+  --sidebar-accent: oklch(0.9 0.02 272);
+  --sidebar-accent-foreground: oklch(0.37 0.08 272);
+  --sidebar-border: transparent;
+  --sidebar-ring: oklch(0.52 0.16 272);
+
+  /* Paired highlight and shadow — the whole look lives in these two colours. */
+  --neu-light: oklch(1 0 0 / 90%);
+  --neu-dark: oklch(0.62 0.02 265 / 40%);
+
+  --shadow-2xs: 2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light);
+  --shadow-xs: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
+  --shadow-sm: 4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light);
+  --shadow: 5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light);
+  --shadow-md: 6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light);
+  --shadow-lg: 9px 9px 20px var(--neu-dark), -9px -9px 20px var(--neu-light);
+  --shadow-xl: 12px 12px 28px var(--neu-dark), -12px -12px 28px var(--neu-light);
+  --shadow-2xl: 16px 16px 36px var(--neu-dark), -16px -16px 36px var(--neu-light);
+}
+
+.dark:root[data-theme-preset='neumorphism'] {
+  --background: oklch(0.265 0.012 265);
+  --foreground: oklch(0.93 0.008 265);
+
+  --card: oklch(0.265 0.012 265);
+  --card-foreground: oklch(0.93 0.008 265);
+  --popover: oklch(0.285 0.012 265);
+  --popover-foreground: oklch(0.93 0.008 265);
+
+  --primary: oklch(0.7 0.14 272);
+  --primary-foreground: oklch(0.18 0.03 272);
+
+  --secondary: oklch(0.265 0.012 265);
+  --secondary-foreground: oklch(0.9 0.01 265);
+
+  --muted: oklch(0.285 0.012 265);
+  --muted-foreground: oklch(0.72 0.015 265);
+
+  --accent: oklch(0.33 0.035 272);
+  --accent-foreground: oklch(0.9 0.04 272);
+
+  --destructive: oklch(0.66 0.18 22);
+  --destructive-foreground: oklch(0.16 0.03 22);
+
+  --border: oklch(1 0 0 / 7%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.7 0.14 272);
+
+  --chart-1: oklch(0.63 0.15 272);
+  --chart-2: oklch(0.62 0.12 198);
+  --chart-3: oklch(0.66 0.13 80);
+  --chart-4: oklch(0.61 0.17 15);
+  --chart-5: oklch(0.6 0.14 312);
+
+  --sidebar: oklch(0.265 0.012 265);
+  --sidebar-foreground: oklch(0.9 0.008 265);
+  --sidebar-primary: oklch(0.7 0.14 272);
+  --sidebar-primary-foreground: oklch(0.18 0.03 272);
+  --sidebar-accent: oklch(0.33 0.035 272);
+  --sidebar-accent-foreground: oklch(0.9 0.04 272);
+  --sidebar-border: transparent;
+  --sidebar-ring: oklch(0.7 0.14 272);
+
+  --neu-light: oklch(0.42 0.015 265 / 55%);
+  --neu-dark: oklch(0.1 0.01 265 / 70%);
+}
+
+/* ===========================================================================
+   Preset surface treatments
+   Colour tokens alone cannot express blur or a double shadow, so these two
+   presets get a few extra rules keyed off the same attribute.
+   =========================================================================== */
+
+/* --- Glass: blur whatever sits behind a translucent surface. --- */
+[data-theme-preset='glassmorphism'] :is(
+    [data-slot='card'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dialog-content'],
+    [data-slot='alert-dialog-content'],
+    [data-slot='sheet-content'],
+    [data-slot='command'],
+    [data-slot='select-content'],
+    [data-slot='tooltip-content'],
+    [data-slot='table-container'],
+    [data-sidebar='sidebar']
+  ) {
+  backdrop-filter: blur(var(--surface-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(150%);
+}
+
+/* The page backdrop lives on <body>; the shell surfaces above it have to get
+   out of the way or the gradient is never seen. */
+[data-theme-preset='glassmorphism'] :is(
+    [data-slot='sidebar-wrapper'],
+    [data-slot='sidebar-inset'],
+    [data-slot='sidebar-gap']
+  ) {
+  background-color: transparent;
+}
+
+[data-theme-preset='glassmorphism'] [data-slot='sidebar-inset'] {
+  border: 1px solid var(--border);
+  backdrop-filter: blur(calc(var(--surface-blur) / 2)) saturate(130%);
+  -webkit-backdrop-filter: blur(calc(var(--surface-blur) / 2)) saturate(130%);
+}
+
+[data-theme-preset='glassmorphism'] [data-slot='sidebar-container'] {
+  backdrop-filter: blur(var(--surface-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(150%);
+}
+
+/* shadcn draws card edges with a ring, not a shadow; presets that are defined
+   by their shadow replace it outright. */
+[data-theme-preset='neobrutalism'] [data-slot='card'],
+[data-theme-preset='soft-pop'] [data-slot='card'],
+[data-theme-preset='glassmorphism'] [data-slot='card'] {
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme-preset='glassmorphism'] [data-slot='card'] {
+  border: 1px solid var(--border);
+}
+
+/* --- Neobrutalism: thick outlines, and buttons that press in. --- */
+[data-theme-preset='neobrutalism'] :is(
+    [data-slot='card'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dialog-content'],
+    [data-slot='alert-dialog-content'],
+    [data-slot='sheet-content'],
+    [data-slot='select-content'],
+    [data-slot='tooltip-content'],
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='badge']
+  ) {
+  border-width: var(--surface-border-width);
+}
+
+[data-theme-preset='neobrutalism'] [data-slot='button']:not([data-variant='ghost']):not(
+    [data-variant='link']
+  ) {
+  border-width: var(--surface-border-width);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
+}
+
+[data-theme-preset='neobrutalism'] [data-slot='button']:not([data-variant='ghost']):not(
+    [data-variant='link']
+  ):active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* --- Neumorphism: everything is extruded from one surface. --- */
+[data-theme-preset='neumorphism'] :is(
+    [data-slot='card'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dialog-content'],
+    [data-slot='alert-dialog-content'],
+    [data-slot='sheet-content'],
+    [data-slot='select-content'],
+    [data-slot='command'],
+    [data-slot='tooltip-content']
+  ) {
+  border-color: transparent;
+  box-shadow: var(--shadow-md);
+}
+
+/* Inputs read as pressed in rather than raised. */
+[data-theme-preset='neumorphism'] :is(
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='select-trigger'],
+    [data-slot='input-group']
+  ) {
+  border-color: transparent;
+  background-color: var(--muted);
+  box-shadow:
+    inset 3px 3px 6px var(--neu-dark),
+    inset -3px -3px 6px var(--neu-light);
+}
+
+[data-theme-preset='neumorphism'] [data-slot='button']:not([data-variant='ghost']):not(
+    [data-variant='link']
+  ) {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 120ms ease;
+}
+
+[data-theme-preset='neumorphism'] [data-slot='button']:not([data-variant='ghost']):not(
+    [data-variant='link']
+  ):active {
+  box-shadow:
+    inset 3px 3px 6px var(--neu-dark),
+    inset -3px -3px 6px var(--neu-light);
+}
+
+/* ===========================================================================
+   Base layer
+   =========================================================================== */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Only the glass preset sets a backdrop; everywhere else this is `none`. */
+    background-image: var(--page-backdrop);
+    background-attachment: fixed;
+  }
+
+  /* Numbers that change in place should not make the row jump. */
+  .tabular-nums,
+  [class*='tabular-nums'] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Long task titles, keys and URLs must never widen a layout. */
+  .break-anywhere {
+    overflow-wrap: anywhere;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 24%, transparent);
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The centred content layout caps line length on wide screens. */
+[data-content-layout='centered'] .app-content {
+  margin-inline: auto;
+  max-width: 88rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Sign-in screens
+   ---------------------------------------------------------------------------
+   A drafting plate: warm paper, hairline compass rings and a measured scale.
+
+   The palette is redefined on `.auth-surface` rather than at `:root`, so the
+   warm paper stays on the sign-in routes and never leaks into the app, where
+   the user's chosen theme preset owns the surface.
+--------------------------------------------------------------------------- */
+
+.auth-surface {
+  --background: oklch(0.955 0.004 85);
+  --foreground: oklch(0.17 0.012 285);
+  --card: oklch(0.988 0.003 85);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --muted: oklch(0.925 0.005 85);
+  --muted-foreground: oklch(0.505 0.012 85);
+  --border: oklch(0.858 0.007 85);
+  --input: oklch(0.858 0.007 85);
+  /* Ink on paper: the primary action is the darkest thing on the screen. */
+  --primary: oklch(0.2 0.012 285);
+  --primary-foreground: oklch(0.97 0.003 85);
+  --accent: oklch(0.915 0.006 85);
+  --accent-foreground: var(--foreground);
+  --ring: oklch(0.4 0.015 285);
+
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.dark .auth-surface {
+  --background: oklch(0.168 0.006 70);
+  --foreground: oklch(0.952 0.004 85);
+  --card: oklch(0.212 0.007 70);
+  --muted: oklch(0.252 0.008 70);
+  --muted-foreground: oklch(0.63 0.01 70);
+  --border: oklch(0.302 0.008 70);
+  --input: oklch(0.302 0.008 70);
+  /* Inverted on dark — paper on ink, same relationship. */
+  --primary: oklch(0.945 0.004 85);
+  --primary-foreground: oklch(0.175 0.006 70);
+  --accent: oklch(0.27 0.008 70);
+  --ring: oklch(0.72 0.008 70);
+}
+
+/* The sign-in sheet squares everything off and sets its labels in mono small
+   caps. Defined once on the surface rather than per form, so all four auth
+   screens share one idiom and a new one inherits it for free. */
+.auth-surface :is([data-slot='card'], [data-slot='input'], [data-slot='button'], [data-slot='textarea']) {
+  border-radius: 0;
+}
+
+.auth-surface [data-slot='field-label'] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Theme presets restyle surfaces as well as recolour them — Neobrutalism's
+   2px outlines and offset shadows, Neumorphism's extrusions, Glass's blur. The
+   sign-in sheet keeps its own palette, so inheriting that structure would leave
+   it half in one look and half in another.
+   
+   These are the variables the preset rules read, so overriding them here
+   neutralises the structure at the source rather than out-specifying a dozen
+   selectors that would need revisiting every time a preset is added. */
+.auth-surface {
+  --surface-border-width: 1px;
+  --radius: 0rem;
+  --page-backdrop: none;
+  --shadow-sm: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+
+.auth-surface [data-slot='card'] {
+  background-color: var(--card);
+  backdrop-filter: none;
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 14px 36px -14px color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+
+/* Compass rings. One repeating gradient rather than a stack of bordered
+   elements: same drawing, one layer to paint. */
+@utility auth-rings {
+  background-image: repeating-radial-gradient(
+    circle at var(--rings-x, 18%) var(--rings-y, 42%),
+    transparent 0 86px,
+    color-mix(in oklab, var(--foreground) 17%, transparent) 86px 87px
+  );
+  mask-image: radial-gradient(85% 80% at var(--rings-x, 18%) var(--rings-y, 42%), black 35%, transparent 95%);
+}
+
+/* The measured scale: a long rule with a tick every eighth. */
+@utility auth-scale {
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in oklab, var(--foreground) 30%, transparent) 0 1px,
+    transparent 1px 12.5%
+  );
+}
+
+/* The marker stepping between stations on the scale. */
+@keyframes auth-station {
+  0%,
+  10% {
+    left: 0%;
+  }
+  27%,
+  37% {
+    left: 33.333%;
+  }
+  54%,
+  64% {
+    left: 66.666%;
+  }
+  81%,
+  100% {
+    left: 100%;
+  }
+}
+
+@utility auth-station {
+  animation: auth-station 16s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Decorative; park it at the last station rather than racing through the
+     keyframes at 0.01ms and landing somewhere arbitrary. */
+  .auth-station {
+    animation: none !important;
+    left: 100% !important;
+  }
+}
+
+/* Guided-tour targets: when the tour scrolls one into view, keep it clear of
+   the sticky top bar rather than tucked underneath it. */
+[data-tour] {
+  scroll-margin-top: 5.5rem;
+  scroll-margin-bottom: 1.5rem;
+}
