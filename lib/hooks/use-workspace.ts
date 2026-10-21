@@ -7,8 +7,10 @@ import type {
   AppNotification,
   DashboardOverview,
   Invitation,
+  Issue,
   MyWork,
   NotificationPreference,
+  ProjectRef,
   Paged,
   PermissionDefinition,
   PortfolioReport,
@@ -96,7 +98,26 @@ export const useTeamMember = (userId: string | undefined) =>
             project: { id: string; key: string; name: string; color: string; status: string };
             role: { id: string; key: string; name: string };
           }[];
-          workload: { openTasks: number; openIssues: number; overdueTasks: number };
+          workload: {
+            openTasks: number;
+            openIssues: number;
+            overdueTasks: number;
+            blockedTasks: number;
+            completedTasks: number;
+            reportedIssues: number;
+            openHotfixes: number;
+          };
+          completedWindowDays: number;
+          issues: (Pick<Issue, 'id' | 'key' | 'title' | 'status' | 'severity' | 'dueDate'> & {
+            project: ProjectRef;
+          })[];
+          recentlyCompleted: {
+            id: string;
+            key: string;
+            title: string;
+            completedAt: string | null;
+            project: ProjectRef;
+          }[];
         };
       }>(`/users/${userId}`).then((r) => r.data),
     enabled: Boolean(userId),

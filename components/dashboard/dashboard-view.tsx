@@ -31,6 +31,9 @@ import { formatDate } from '@/lib/format';
 import { useOverview } from '@/lib/hooks/use-workspace';
 import { useAuth } from '@/providers/auth-provider';
 
+/** Enough to see what just happened without the column outgrowing its neighbour. */
+const RECENT_ACTIVITY_SHOWN = 7;
+
 export function DashboardView() {
   const { user } = useAuth();
   const { data, isLoading, isError, error, refetch } = useOverview();
@@ -269,12 +272,25 @@ export function DashboardView() {
                 </CardContent>
               </Card>
 
+              {/* The API sends twenty entries. Rendering all of them made this
+                  column run far past the one beside it, so the page ended in a
+                  tall empty gap. Show the handful somebody actually scans and
+                  say how many are behind them. */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">Recent activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ActivityFeed entries={data.recentActivity} />
+                  <ActivityFeed entries={data.recentActivity.slice(0, RECENT_ACTIVITY_SHOWN)} />
+                  {data.recentActivity.length > RECENT_ACTIVITY_SHOWN ? (
+                    <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+                      {data.recentActivity.length - RECENT_ACTIVITY_SHOWN} older{' '}
+                      {data.recentActivity.length - RECENT_ACTIVITY_SHOWN === 1
+                        ? 'change'
+                        : 'changes'}{' '}
+                      not shown
+                    </p>
+                  ) : null}
                 </CardContent>
               </Card>
             </div>

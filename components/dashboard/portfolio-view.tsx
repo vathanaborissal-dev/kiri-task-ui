@@ -107,6 +107,10 @@ export function PortfolioView() {
     created: week.created,
   }));
 
+  // A flat line across an empty grid reads as a broken chart, not as "no work
+  // yet" — and it is the tallest thing on the page while it says nothing.
+  const hasTrend = trend.some((week) => week.completed > 0 || week.created > 0);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -270,7 +274,13 @@ export function PortfolioView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={trendConfig} className="h-64 w-full">
+              {!hasTrend ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Nothing finished or raised in this window yet. The trend appears once work
+                  starts moving.
+                </p>
+              ) : (
+              <ChartContainer config={trendConfig} className="h-52 w-full">
                 <LineChart data={trend} margin={{ left: -16, right: 8, top: 8 }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis
@@ -299,6 +309,7 @@ export function PortfolioView() {
                   />
                 </LineChart>
               </ChartContainer>
+              )}
             </CardContent>
           </Card>
 

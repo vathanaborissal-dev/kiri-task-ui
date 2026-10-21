@@ -31,9 +31,6 @@ export function ProjectShell({
           {project.key}
         </span>
         <ProjectStatusBadge status={project.status} />
-        {project.myRole ? (
-          <span className="text-xs text-muted-foreground">You are {project.myRole.name}</span>
-        ) : null}
         <div className="ml-auto">
           <AvatarStack users={project.members.map((m) => m.user)} max={5} label="Project team" />
         </div>

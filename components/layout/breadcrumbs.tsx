@@ -36,6 +36,7 @@ const SECTION_LABELS: Record<string, string> = {
   notifications: 'Notifications',
   security: 'Security',
   telegram: 'Telegram',
+  activity: 'Activity',
   guide: 'Beginner guide',
   'whats-new': "What's new",
 };

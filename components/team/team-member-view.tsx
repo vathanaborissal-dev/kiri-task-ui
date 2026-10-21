@@ -1,6 +1,16 @@
 'use client';
 
-import { AlertTriangle, ArrowLeft, Bug, ListChecks, Send } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Bug,
+  CheckCircle2,
+  CircleSlash,
+  Flame,
+  ListChecks,
+  Send,
+} from 'lucide-react';
 import Link from 'next/link';
 import { ActivityFeed } from '@/components/common/activity-feed';
 import { CenteredSpinner } from '@/components/common/loading';
@@ -10,11 +20,15 @@ import { TaskRow } from '@/components/tasks/task-row';
 import { UserAvatar } from '@/components/common/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { IssueStatusBadge, SeverityBadge } from '@/components/common/badges';
 import { formatDate, formatTimeAgo } from '@/lib/format';
 import { useActivity } from '@/lib/hooks/use-collab';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import { useTeamMember } from '@/lib/hooks/use-workspace';
+
+/** Enough to show the shape of someone's week without dominating the page. */
+const ACTIVITY_PREVIEW = 6;
 
 export function TeamMemberView({ userId }: { userId: string }) {
   const { data: member, isLoading, isError, error, refetch } = useTeamMember(userId);
@@ -22,7 +36,12 @@ export function TeamMemberView({ userId }: { userId: string }) {
     { assigneeId: [userId], includeDone: false, sort: 'dueDate', pageSize: 25 },
     Boolean(member),
   );
-  const { data: activity } = useActivity({ actorId: userId, pageSize: 20 }, Boolean(member));
+  // The card is a glance, not a log — it used to pull twenty entries and run
+  // far past the column beside it. The full history has its own page.
+  const { data: activity } = useActivity(
+    { actorId: userId, pageSize: ACTIVITY_PREVIEW },
+    Boolean(member),
+  );
 
   if (isError) return <ErrorState error={error} onRetry={() => void refetch()} />;
   if (isLoading || !member) return <CenteredSpinner label="Loading profile…" />;
@@ -76,7 +95,7 @@ export function TeamMemberView({ userId }: { userId: string }) {
         </Card>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Open tasks" value={member.workload.openTasks} icon={ListChecks} />
         <StatCard
           label="Overdue"
@@ -84,7 +103,27 @@ export function TeamMemberView({ userId }: { userId: string }) {
           icon={AlertTriangle}
           tone={member.workload.overdueTasks > 0 ? 'danger' : 'default'}
         />
+        <StatCard
+          label="Blocked"
+          value={member.workload.blockedTasks}
+          icon={CircleSlash}
+          hint={member.workload.blockedTasks > 0 ? 'Waiting on something' : undefined}
+          tone={member.workload.blockedTasks > 0 ? 'warning' : 'default'}
+        />
         <StatCard label="Open issues" value={member.workload.openIssues} icon={Bug} />
+        <StatCard
+          label="Hotfixes"
+          value={member.workload.openHotfixes}
+          icon={Flame}
+          tone={member.workload.openHotfixes > 0 ? 'warning' : 'default'}
+        />
+        <StatCard
+          label="Finished"
+          value={member.workload.completedTasks}
+          hint={`Last ${member.completedWindowDays} days`}
+          icon={CheckCircle2}
+          tone={member.workload.completedTasks > 0 ? 'success' : 'default'}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-5">
@@ -100,6 +139,69 @@ export function TeamMemberView({ userId }: { userId: string }) {
                 </p>
               ) : (
                 tasks!.data.map((task) => <TaskRow key={task.id} task={task} showProject />)
+              )}
+            </CardContent>
+          </Card>
+
+          {/* A manager asking "what are they up to" wants the bugs sitting on
+              this person as much as the tasks — those are what stall. */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Open issues</CardTitle>
+              <CardDescription>Assigned to {member.name.split(' ')[0]}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {member.issues.length === 0 ? (
+                <p className="py-3 text-sm text-muted-foreground">No open issues assigned.</p>
+              ) : (
+                member.issues.map((issue) => (
+                  <Link
+                    key={issue.id}
+                    href={`/projects/${issue.project.key}/issues/${issue.key}`}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border p-2.5 transition-colors hover:bg-accent/40"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{issue.key}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{issue.title}</span>
+                    <SeverityBadge severity={issue.severity} />
+                    <IssueStatusBadge status={issue.status} />
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Finished recently</CardTitle>
+              <CardDescription>
+                Completed in the last {member.completedWindowDays} days
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {member.recentlyCompleted.length === 0 ? (
+                <p className="py-3 text-sm text-muted-foreground">
+                  Nothing completed in this window.
+                </p>
+              ) : (
+                member.recentlyCompleted.map((task) => (
+                  <Link
+                    key={task.id}
+                    href={`/projects/${task.project.key}/tasks/${task.key}`}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border p-2.5 transition-colors hover:bg-accent/40"
+                  >
+                    <CheckCircle2
+                      className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden
+                    />
+                    <span className="font-mono text-xs text-muted-foreground">{task.key}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{task.title}</span>
+                    {task.completedAt ? (
+                      <span className="text-xs whitespace-nowrap text-muted-foreground">
+                        {formatTimeAgo(task.completedAt)}
+                      </span>
+                    ) : null}
+                  </Link>
+                ))
               )}
             </CardContent>
           </Card>
@@ -145,11 +247,24 @@ export function TeamMemberView({ userId }: { userId: string }) {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="flex-row items-center justify-between gap-2 pb-2">
               <CardTitle className="text-base">Recent activity</CardTitle>
+              {(activity?.meta.total ?? 0) > ACTIVITY_PREVIEW ? (
+                <Button asChild variant="ghost" size="sm" className="-my-1 gap-1 text-xs">
+                  <Link href={`/team/${userId}/activity`}>
+                    Show all
+                    <ArrowRight className="size-3.5" aria-hidden />
+                  </Link>
+                </Button>
+              ) : null}
             </CardHeader>
             <CardContent>
               <ActivityFeed entries={activity?.data ?? []} />
+              {(activity?.meta.total ?? 0) > ACTIVITY_PREVIEW ? (
+                <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+                  Showing {activity?.data.length ?? 0} of {activity?.meta.total ?? 0} changes
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         </div>
