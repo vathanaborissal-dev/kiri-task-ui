@@ -284,6 +284,37 @@ export function CreateIssueDialog({
               <AttachmentPicker files={files} onChange={setFiles} disabled={pending} />
             </Field>
 
+            {/* Owner and deadline stay on the first screen: who picks a bug up is
+                part of reporting it, and burying this behind "more options" is
+                why issues were landing unassigned. */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel>Assign to</FieldLabel>
+                    <Select
+                      value={assigneeId || 'none'}
+                      onValueChange={(v) => setAssigneeId(v === 'none' ? '' : v)}
+                      disabled={!canAssign}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Unassigned</SelectItem>
+                        {(members ?? []).map((member) => (
+                          <SelectItem key={member.user.id} value={member.user.id}>
+                            {member.user.name} ·{' '}
+                            {member.user.telegramLinked ? 'Telegram ready' : 'App only'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Fix by</FieldLabel>
+                    <DateField value={dueDate} onChange={setDueDate} placeholder="No deadline" />
+                  </Field>
+                </div>
+
             {showDetails ? (
               <div className="space-y-4 rounded-lg border bg-muted/20 p-3">
                 <Field>
@@ -316,33 +347,6 @@ export function CreateIssueDialog({
                     />
                   </Field>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel>Assign to</FieldLabel>
-                    <Select
-                      value={assigneeId || 'none'}
-                      onValueChange={(v) => setAssigneeId(v === 'none' ? '' : v)}
-                      disabled={!canAssign}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Unassigned" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Unassigned</SelectItem>
-                        {(members ?? []).map((member) => (
-                          <SelectItem key={member.user.id} value={member.user.id}>
-                            {member.user.name} ·{' '}
-                            {member.user.telegramLinked ? 'Telegram ready' : 'App only'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field>
-                    <FieldLabel>Fix by</FieldLabel>
-                    <DateField value={dueDate} onChange={setDueDate} placeholder="No deadline" />
-                  </Field>
-                </div>
               </div>
             ) : (
               <Button
@@ -352,7 +356,7 @@ export function CreateIssueDialog({
                 className="text-muted-foreground"
                 onClick={() => setShowDetails(true)}
               >
-                Add reproduction steps, assignee and deadline
+                Add reproduction steps
               </Button>
             )}
 

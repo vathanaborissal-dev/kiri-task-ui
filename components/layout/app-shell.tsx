@@ -1,7 +1,7 @@
 'use client';
 
 import { ErrorState } from '@/components/common/error-state';
-import { CenteredSpinner } from '@/components/common/loading';
+import { AppShellSkeleton } from '@/components/layout/app-shell-skeleton';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { CommandPalette } from '@/components/layout/command-palette';
 import { TourOverlay } from '@/components/help/tour/tour-overlay';
@@ -22,8 +22,11 @@ export function AppShell({
   const { user, isLoading, isError, error, refresh } = useAuth();
   const { sidebarVariant } = useAppearance();
 
+  // The session probe is the only thing between a fresh sign-in and the
+  // workspace, so this is the first screen somebody sees. Draw the layout
+  // rather than a spinner on a blank page.
   if (isLoading && !user) {
-    return <CenteredSpinner label="Loading your workspace…" />;
+    return <AppShellSkeleton sidebarOpen={sidebarDefaultOpen} variant={sidebarVariant} />;
   }
 
   // A 401 already redirects to the sign-in page, so reaching here means the API
@@ -41,8 +44,9 @@ export function AppShell({
     );
   }
 
-  // The proxy redirect handles signed-out visitors; this covers a dropped session.
-  if (!user) return <CenteredSpinner label="Signing you in…" />;
+  // The proxy redirect handles signed-out visitors; this covers a dropped
+  // session, which resolves the same way — so it gets the same screen.
+  if (!user) return <AppShellSkeleton sidebarOpen={sidebarDefaultOpen} variant={sidebarVariant} />;
 
   return (
     <RealtimeProvider>
