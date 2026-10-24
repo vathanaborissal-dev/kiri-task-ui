@@ -210,9 +210,23 @@ export const GUIDE: GuideSection[] = [
     steps: [
       {
         title: 'A normal problem: report an Issue',
-        body: '**Report Issue → write what should happen and what happened → choose how serious it is → choose where you found it → add or link the fix task → fix and test → mark Resolved after someone checks it.** Use the bug button at the top of any page.',
+        body: '**Report Issue → write what should happen and what happened → choose how serious it is → choose where you found it → set a start and end date → add one or more tasks for the fix → fix and test → mark Resolved after someone checks it.** Use the bug button at the top of any page.',
         href: '/issues',
         linkLabel: 'See all issues',
+      },
+      {
+        title: 'An issue can hold several tasks',
+        body: 'A fix that needs a migration, a code change and a test is **three tasks on one issue**, not one vague one. Add them from the issue page; each has its own owner and its own **completed percentage**, and the issue shows how far along the whole thing is. Starting the first task moves the issue to **In Progress**; finishing the last one moves it to **Ready for Testing**.',
+      },
+      {
+        title: 'Finished issues have to be reopened before they move again',
+        body: 'An issue that is **Resolved**, **Closed** or **Won’t Fix** cannot go straight back to In Progress — move it to **Reopened** first. While it is finished its tasks are frozen too. **Assign**, **Close** and **Reopen** are reserved for project managers, team leads and issue managers; the full table is on **Roles & permissions**.',
+        href: '/roles',
+        linkLabel: 'See who can do what',
+      },
+      {
+        title: 'Stuck on a task? Ask for help',
+        body: 'On any task you are working on, **Ask for help** pulls in another developer alongside you. They are notified with your note, and both of you stay on the task — you do not need a lead to do it for you.',
       },
       {
         title: 'A serious live problem: request a Hotfix',

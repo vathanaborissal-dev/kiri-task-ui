@@ -1,16 +1,11 @@
 'use client';
 
-import { Download, FileText, Trash2 } from 'lucide-react';
+import { Download, FileText, Trash2, ZoomIn } from 'lucide-react';
+import { useState } from 'react';
 import { IconButton } from '@/components/common/icon-button';
+import { ImageLightbox } from '@/components/common/image-lightbox';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useState } from 'react';
 import { formatBytes, formatTimeAgo } from '@/lib/format';
 import type { Attachment } from '@/lib/types';
 
@@ -23,7 +18,7 @@ export function AttachmentGallery({
   onDelete?: (id: string) => void;
   canDelete?: (attachment: Attachment) => boolean;
 }) {
-  const [preview, setPreview] = useState<Attachment | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   if (attachments.length === 0) return null;
 
   const images = attachments.filter((a) => a.mimeType.startsWith('image/'));
@@ -37,17 +32,21 @@ export function AttachmentGallery({
             <figure key={attachment.id} className="group relative overflow-hidden rounded-lg border">
               <button
                 type="button"
-                onClick={() => setPreview(attachment)}
-                className="block w-full"
-                aria-label={`Open ${attachment.filename}`}
+                onClick={() => setPreviewId(attachment.id)}
+                className="relative block w-full cursor-zoom-in"
+                aria-label={`Open ${attachment.filename} in the viewer`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={attachment.url}
                   alt={attachment.filename}
                   loading="lazy"
-                  className="aspect-video w-full bg-muted object-cover transition-transform group-hover:scale-[1.02]"
+                  className="aspect-video w-full bg-muted object-contain transition-transform group-hover:scale-[1.02]"
                 />
+                {/* A thumbnail that opens a viewer should look like one. */}
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                  <ZoomIn className="size-6 text-white drop-shadow" aria-hidden />
+                </span>
               </button>
               <figcaption className="flex items-center gap-1 border-t bg-card px-2 py-1 text-[11px] text-muted-foreground">
                 <span className="min-w-0 flex-1 truncate">{attachment.filename}</span>
@@ -109,21 +108,9 @@ export function AttachmentGallery({
         </ul>
       ) : null}
 
-      <Dialog open={Boolean(preview)} onOpenChange={(open) => !open && setPreview(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="truncate text-sm font-normal">{preview?.filename}</DialogTitle>
-          </DialogHeader>
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview.url}
-              alt={preview.filename}
-              className="max-h-[75dvh] w-full rounded-lg object-contain"
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {/* The viewer gets the whole image set, not just the one clicked, so you
+          can walk through a bug report's screenshots without closing it. */}
+      <ImageLightbox images={images} openId={previewId} onOpenChange={setPreviewId} />
     </div>
   );
 }

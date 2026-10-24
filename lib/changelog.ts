@@ -26,6 +26,63 @@ export const CHANGE_KIND_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    version: '1.4',
+    date: '2026-10-24',
+    title: 'Issues that carry their work',
+    summary:
+      'An issue can now hold as many tasks as the fix needs, each with its own percentage, and the two keep each other honest — the issue moves as its tasks do, and a settled issue freezes them until somebody reopens it.',
+    changes: [
+      {
+        kind: 'new',
+        text: '**An issue can have many tasks.** The issue page lists them all, rolls their progress into one bar, and lets you move or assign several at once. The first one raised is still the “main fix” everything else links to.',
+      },
+      {
+        kind: 'new',
+        text: '**Completed percentage on a task.** A slider and five quick buttons, on the task page and in bulk from the task list. Finishing a task sets it to 100%, and moving one back out of Done drops it below the line, so the board and the number can never disagree.',
+      },
+      {
+        kind: 'new',
+        text: '**Ask for help.** Anyone already on a task can pull in another developer without waiting for a lead. They are notified, start watching the task and appear alongside you on it. Taking somebody off still needs **Assign tasks**.',
+      },
+      {
+        kind: 'new',
+        text: '**Status changes follow a workflow.** An issue cannot slide back down from Resolved, Closed or Won’t Fix — it has to be **reopened** first, which is what makes the reopen count mean something. Only the moves you are allowed to make are offered, and the whole table, with the roles that hold each gate, is on **Roles & permissions**.',
+      },
+      {
+        kind: 'new',
+        text: '**Close** and **Reopen** are now permissions of their own, held by project managers, team leads and the new **Issue Manager** role. Assigning an issue already needed **Assign issues**; QA can reopen what it tested.',
+      },
+      {
+        kind: 'new',
+        text: '**Start and end dates on an issue**, in the web form and in the Telegram **/report** flow, which now asks for both with one-tap shortcuts — or a typed date.',
+      },
+      {
+        kind: 'new',
+        text: '**Multi-select on issues.** Tick several and change status, severity, priority, owner or end date in one go. Only statuses every selected issue can actually reach are offered.',
+      },
+      {
+        kind: 'improved',
+        text: '**Tasks and their issue stay in step.** The first task to start moves the issue to In Progress; the last one to finish moves it to Ready for Testing. While an issue is settled its tasks are frozen, and the refusal says which issue to reopen.',
+      },
+      {
+        kind: 'improved',
+        text: '**The create forms are grouped and labelled.** The guidance that used to live in placeholder text — and vanished the moment you typed — now sits under each field and stays put. Reproduction steps and planning fields fold away until you want them.',
+      },
+      {
+        kind: 'improved',
+        text: '**Image previews open full screen**, with zoom to 800%, drag to pan, arrow keys to step through a bug report’s screenshots, and a filmstrip. Previously a screenshot opened in a box narrower than a phone.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The **top bar** stays put when you scroll a long page, instead of sliding away.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The **Appearance** panel scrolls, so the sidebar, content-width and reset controls below Typeface are reachable again.',
+      },
+    ],
+  },
+  {
     version: '1.3',
     date: '2026-10-11',
     title: 'Today, and the team’s day',

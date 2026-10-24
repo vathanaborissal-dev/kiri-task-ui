@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, Loader2, MessageSquare, MoveRight, Paperclip, Workflow } from 'lucide-react';
+import { Bug, Check, Loader2, MessageSquare, MoveRight, Paperclip, Workflow } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
   QaBadge,
 } from '@/components/common/badges';
 import { AvatarStack } from '@/components/common/user-avatar';
+import { ProgressBar } from '@/components/tasks/progress-field';
 import { IconButton } from '@/components/common/icon-button';
 import {
   DropdownMenu,
@@ -179,7 +180,24 @@ export function TaskCard({
         {task.phase ? <PhaseBadge phase={task.phase} /> : null}
         <QaBadge status={task.qaStatus} />
         <DueDateBadge date={task.dueDate} />
+        {task.issue ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border px-1.5 text-[10px] text-muted-foreground"
+            title={`Fixes ${task.issue.key}: ${task.issue.title}`}
+          >
+            <Bug className="size-2.5" aria-hidden />
+            {task.issue.key}
+          </span>
+        ) : null}
       </div>
+
+      {/* A bar rather than a number: on a board you are scanning columns, and
+          a row of percentages is harder to read at a glance than a row of
+          fills. Hidden at 0 and on cancelled cards, where it says nothing. */}
+      {task.status.category !== 'CANCELED' &&
+      (task.progress > 0 || task.status.category === 'DONE') ? (
+        <ProgressBar value={task.status.category === 'DONE' ? 100 : task.progress} fill />
+      ) : null}
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">

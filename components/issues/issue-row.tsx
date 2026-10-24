@@ -1,17 +1,44 @@
 'use client';
 
-import { MessageSquare, Paperclip, RotateCcw } from 'lucide-react';
+import { MessageSquare, Paperclip, RotateCcw, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { DueDateBadge, IssueStatusBadge, PhaseBadge, SeverityBadge } from '@/components/common/badges';
 import { UserAvatar } from '@/components/common/user-avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatTimeAgo } from '@/lib/format';
 import type { Issue } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
-export function IssueRow({ issue, showProject }: { issue: Issue; showProject?: boolean }) {
+export function IssueRow({
+  issue,
+  showProject,
+  selected,
+  onSelectedChange,
+}: {
+  issue: Issue;
+  showProject?: boolean;
+  /** Supplying `onSelectedChange` turns the row into a selectable one. */
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
+}) {
   const href = `/projects/${issue.project.key}/issues/${issue.key}`;
 
   return (
-    <div className="group flex items-start gap-3 rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-accent/30">
+    <div
+      className={cn(
+        'group flex items-start gap-3 rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-accent/30',
+        selected && 'border-primary/60 bg-accent/40',
+      )}
+    >
+      {onSelectedChange ? (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(value) => onSelectedChange(value === true)}
+          aria-label={`Select ${issue.key}`}
+          className="mt-1"
+        />
+      ) : null}
+
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Link href={href} className="font-mono text-xs text-muted-foreground hover:text-foreground">
@@ -46,7 +73,19 @@ export function IssueRow({ issue, showProject }: { issue: Issue; showProject?: b
               reopened {issue.reopenCount}×
             </span>
           ) : null}
-          {issue.task ? (
+          {issue.counts.tasks > 0 ? (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
+              title={
+                issue.task
+                  ? `Main fix: ${issue.task.key} — ${issue.task.title}`
+                  : `${issue.counts.tasks} tasks`
+              }
+            >
+              <Wrench className="size-3" aria-hidden />
+              {issue.counts.tasks} {issue.counts.tasks === 1 ? 'task' : 'tasks'}
+            </span>
+          ) : issue.task ? (
             <Link
               href={`/projects/${issue.project.key}/tasks/${issue.task.key}`}
               className="text-[11px] text-primary hover:underline"

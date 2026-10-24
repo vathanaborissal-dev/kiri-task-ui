@@ -4,6 +4,7 @@ import { AtSign, MoreHorizontal, Paperclip, Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AttachmentPicker } from '@/components/common/attachment-picker';
+import { ImageLightbox } from '@/components/common/image-lightbox';
 import { Spinner } from '@/components/common/loading';
 import { RichText } from '@/components/common/rich-text';
 import { UserAvatar } from '@/components/common/user-avatar';
@@ -50,10 +51,17 @@ export function CommentThread({
   const [showAttach, setShowAttach] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState('');
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const comments = data?.data ?? [];
   const pending = create.isPending || uploadAttachments.isPending;
+
+  // Every image in the thread, so the viewer can step through a conversation's
+  // screenshots rather than only the one that was clicked.
+  const threadImages = comments.flatMap((comment) =>
+    (comment.attachments ?? []).filter((attachment) => attachment.mimeType.startsWith('image/')),
+  );
 
   const submit = async () => {
     const trimmed = body.trim();
@@ -169,12 +177,14 @@ export function CommentThread({
                         <div className="flex flex-wrap gap-2">
                           {comment.attachments.map((attachment) =>
                             attachment.mimeType.startsWith('image/') ? (
-                              <a
+                              // The viewer, not a new tab: a raw image URL has
+                              // no zoom, no filename and no way back.
+                              <button
                                 key={attachment.id}
-                                href={attachment.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block overflow-hidden rounded-md border"
+                                type="button"
+                                onClick={() => setPreviewId(attachment.id)}
+                                className="block cursor-zoom-in overflow-hidden rounded-md border transition-opacity hover:opacity-85"
+                                aria-label={`Open ${attachment.filename} in the viewer`}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -183,7 +193,7 @@ export function CommentThread({
                                   loading="lazy"
                                   className="h-24 w-auto object-cover"
                                 />
-                              </a>
+                              </button>
                             ) : (
                               <a
                                 key={attachment.id}
@@ -289,6 +299,8 @@ export function CommentThread({
           </div>
         </div>
       ) : null}
+
+      <ImageLightbox images={threadImages} openId={previewId} onOpenChange={setPreviewId} />
     </div>
   );
 }

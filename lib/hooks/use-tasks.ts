@@ -33,6 +33,7 @@ export type TaskFilters = {
   milestoneId?: string;
   releaseId?: string;
   parentTaskId?: string;
+  issueId?: string;
   topLevelOnly?: boolean;
   unassigned?: boolean;
   overdue?: boolean;
@@ -40,7 +41,7 @@ export type TaskFilters = {
   dueTo?: string;
   dueWithinDays?: number;
   includeDone?: boolean;
-  sort?: 'position' | 'dueDate' | 'priority' | 'createdAt' | 'updatedAt' | 'title' | 'key';
+  sort?: 'position' | 'dueDate' | 'priority' | 'progress' | 'createdAt' | 'updatedAt' | 'title' | 'key';
   order?: 'asc' | 'desc';
   groupBy?: 'none' | 'status' | 'assignee' | 'priority' | 'phase' | 'milestone';
   page?: number;
@@ -111,6 +112,9 @@ export const useTaskInvalidator = () => {
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     void queryClient.invalidateQueries({ queryKey: ['projects'] });
     void queryClient.invalidateQueries({ queryKey: ['activity'] });
+    // Moving a task can carry its issue forward (In Progress → Ready for
+    // Testing), so the issue views have to be refetched as well.
+    void queryClient.invalidateQueries({ queryKey: ['issues'] });
     if (idOrKey) void queryClient.invalidateQueries({ queryKey: taskKeys.detail(idOrKey) });
   };
 };
@@ -236,10 +240,37 @@ export const useDeleteTask = () => {
 export const useBulkUpdateTasks = () => {
   const invalidate = useTaskInvalidator();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) =>
+    mutationFn: (body: { taskIds: string[] } & Record<string, unknown>) =>
       api<{ updated: number }>('/tasks/bulk', { method: 'POST', body }),
     onSuccess: () => invalidate(),
   });
+};
+
+/**
+ * Pulling another developer onto a task, and taking them back off.
+ *
+ * Separate from `useUpdateTask`'s `assigneeIds` because the API treats it as a
+ * different act: anyone already on the task can ask for help, whereas replacing
+ * the assignee list needs `task:assign`.
+ */
+export const useTaskHelpers = (taskIdOrKey: string) => {
+  const invalidate = useTaskInvalidator();
+  return {
+    add: useMutation({
+      mutationFn: (body: { userId: string; note?: string }) =>
+        api<{ data: TaskDetail }>(`/tasks/${taskIdOrKey}/helpers`, { method: 'POST', body }).then(
+          (r) => r.data,
+        ),
+      onSuccess: () => invalidate(taskIdOrKey),
+    }),
+    remove: useMutation({
+      mutationFn: (userId: string) =>
+        api<{ data: TaskDetail }>(`/tasks/${taskIdOrKey}/helpers/${userId}`, {
+          method: 'DELETE',
+        }).then((r) => r.data),
+      onSuccess: () => invalidate(taskIdOrKey),
+    }),
+  };
 };
 
 export const useToggleWatch = () => {

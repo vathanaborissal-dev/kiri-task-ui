@@ -39,6 +39,7 @@ import { CreateIssueDialog } from '@/components/issues/create-issue-dialog';
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
 import { TaskChecklist } from '@/components/tasks/task-checklist';
 import { TaskLinks } from '@/components/tasks/task-links';
+import { ProgressBar } from '@/components/tasks/progress-field';
 import { TaskProperties, type TaskPatch } from '@/components/tasks/task-properties';
 import { IconButton } from '@/components/common/icon-button';
 import { Button } from '@/components/ui/button';
@@ -105,7 +106,12 @@ export function TaskDetailView({
     try {
       await updateTask.mutateAsync({ idOrKey: task.key, ...body });
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : 'Could not save that change');
+      // A refusal from the issue gate explains itself ("KIRI-I4 is closed —
+      // reopen it before…"), so it is shown as written and given long enough
+      // to read.
+      toast.error(caught instanceof Error ? caught.message : 'Could not save that change', {
+        duration: 6000,
+      });
     }
   };
 
@@ -223,6 +229,7 @@ export function TaskDetailView({
 
           <div className="flex flex-wrap items-center gap-2">
             <TaskStatusBadge status={task.status} />
+            <ProgressBar value={task.status.category === 'DONE' ? 100 : task.progress} />
             <PriorityBadge priority={task.priority} />
             <PhaseBadge phase={task.phase} />
             <QaBadge status={task.qaStatus} />
@@ -477,6 +484,7 @@ export function TaskDetailView({
                 project={project}
                 members={members ?? []}
                 permissions={permissions}
+                {...(user?.id ? { currentUserId: user.id } : {})}
                 onPatch={(body) => void patch(body)}
                 pending={updateTask.isPending}
               />

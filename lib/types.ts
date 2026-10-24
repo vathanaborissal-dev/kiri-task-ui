@@ -227,6 +227,8 @@ export type Task = {
   completedAt: string | null;
   estimateHours: number | null;
   spentHours: number | null;
+  /** Self-reported completion, 0-100. A DONE status forces it to 100. */
+  progress: number;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -239,6 +241,8 @@ export type Task = {
   reporter: UserSummary;
   assignees: UserSummary[];
   labels: LabelRef[];
+  /** The issue this task works towards, when it came from one. */
+  issue: { id: string; key: string; title: string; status: IssueStatus; severity: Severity } | null;
   counts: { subtasks: number; comments: number; attachments: number; checklist: number };
 };
 
@@ -304,6 +308,7 @@ export type Issue = {
   status: IssueStatus;
   severity: Severity;
   priority: Priority;
+  startDate: string | null;
   dueDate: string | null;
   resolvedAt: string | null;
   closedAt: string | null;
@@ -314,13 +319,53 @@ export type Issue = {
   phase: PhaseRef | null;
   reporter: UserSummary;
   assignee: UserSummary | null;
+  /** The primary fix task — the first one raised. See `tasks` for all of them. */
   task: { id: string; key: string; title: string } | null;
   release: { id: string; version: string } | null;
   labels: LabelRef[];
-  counts: { comments: number; attachments: number; hotfixes: number };
+  counts: { comments: number; attachments: number; hotfixes: number; tasks: number };
   watchers?: UserSummary[];
   attachments?: Attachment[];
   hotfixes?: { id: string; key: string; title: string; status: HotfixStatus; severity: Severity }[];
+  /** Every task raised against this issue. Detail responses only. */
+  tasks?: IssueTask[];
+  /** Completion averaged across `tasks`. Detail responses only. */
+  taskProgress?: { percent: number; done: number; total: number };
+};
+
+/** A task as the issue detail page lists it. */
+export type IssueTask = {
+  id: string;
+  key: string;
+  title: string;
+  type: TaskType;
+  priority: Priority;
+  progress: number;
+  startDate: string | null;
+  dueDate: string | null;
+  completedAt: string | null;
+  status: TaskStatusRef;
+  assignees: UserSummary[];
+};
+
+/** One row of the issue status workflow: where you can go, and what it needs. */
+export type IssueTransitionRow = {
+  from: IssueStatus;
+  fromLabel: string;
+  settled: boolean;
+  to: {
+    status: IssueStatus;
+    label: string;
+    requires: 'issue:assign' | 'issue:close' | 'issue:reopen' | null;
+    note: string | null;
+  }[];
+};
+
+/** The moves the current viewer can make on one issue right now. */
+export type IssueTransitions = {
+  status: IssueStatus;
+  allowed: IssueStatus[];
+  blocked: { status: IssueStatus; reason: string | null }[];
 };
 
 export type Deployment = {

@@ -4,7 +4,8 @@ import { ListChecks, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/common/empty-state';
-import { CenteredSpinner, ListSkeleton } from '@/components/common/loading';
+import { DateField } from '@/components/common/date-field';
+import { CenteredSpinner, ListSkeleton, Spinner } from '@/components/common/loading';
 import { ErrorState } from '@/components/common/error-state';
 import { MultiSelect } from '@/components/common/multi-select';
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
@@ -12,6 +13,7 @@ import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
 import { TaskRow } from '@/components/tasks/task-row';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -60,13 +62,28 @@ export function TaskListView({ projectKey }: { projectKey: string }) {
       isSelected ? [...current, id] : current.filter((value) => value !== id),
     );
 
+  // Every task currently on screen, grouped or not — "select all" has to mean
+  // what is visible, not what the filters would return on another page.
+  const visibleIds = grouped
+    ? (groups.data?.data ?? []).flatMap((group) => (group.tasks ?? []).map((task) => task.id))
+    : tasks.map((task) => task.id);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.includes(id));
+
   const applyBulk = async (patch: Record<string, unknown>) => {
+    const count = selected.length;
     try {
       const result = await bulkUpdate.mutateAsync({ taskIds: selected, ...patch });
-      toast.success(`${result.updated} tasks updated`);
+      toast.success(
+        `${result.updated} ${result.updated === 1 ? 'task' : 'tasks'} updated`,
+      );
       setSelected([]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not update those tasks');
+      // A refusal from the issue gate names the task and its issue, so it is
+      // shown as written rather than flattened to "could not update".
+      toast.error(error instanceof Error ? error.message : `Could not update those ${count} tasks`, {
+        duration: 6000,
+      });
     }
   };
 
@@ -86,6 +103,21 @@ export function TaskListView({ projectKey }: { projectKey: string }) {
           </Button>
         ) : null}
       </div>
+
+      {visibleIds.length > 0 ? (
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={allVisibleSelected}
+            onCheckedChange={(value) =>
+              setSelected(value === true ? visibleIds : [])
+            }
+            aria-label="Select every task shown"
+          />
+          {allVisibleSelected
+            ? `All ${visibleIds.length} shown selected`
+            : `Select all ${visibleIds.length} shown`}
+        </label>
+      ) : null}
 
       {selected.length > 0 ? (
         <Card className="border-primary/40 bg-accent/30">
@@ -124,6 +156,23 @@ export function TaskListView({ projectKey }: { projectKey: string }) {
               </Select>
             ) : null}
 
+            {/* The headline reason for selecting several tasks: reporting the
+                same percentage across a batch, one request instead of eight. */}
+            {can('task:update') ? (
+              <Select onValueChange={(value) => void applyBulk({ progress: Number(value) })}>
+                <SelectTrigger size="sm" className="h-8 w-36">
+                  <SelectValue placeholder="Set progress" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 25, 50, 75, 100].map((step) => (
+                    <SelectItem key={step} value={String(step)}>
+                      {step}% done
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+
             {can('task:manage_phase') ? (
               <Select onValueChange={(phaseId) => void applyBulk({ phaseId })}>
                 <SelectTrigger size="sm" className="h-8 w-36">
@@ -137,6 +186,17 @@ export function TaskListView({ projectKey }: { projectKey: string }) {
                   ))}
                 </SelectContent>
               </Select>
+            ) : null}
+
+            {can('task:manage_deadline') ? (
+              <div className="w-40">
+                <DateField
+                  value={null}
+                  onChange={(dueDate) => (dueDate ? void applyBulk({ dueDate }) : undefined)}
+                  placeholder="Set deadline"
+                  label="Deadline for the selected tasks"
+                />
+              </div>
             ) : null}
 
             {can('task:assign') ? (
@@ -154,6 +214,8 @@ export function TaskListView({ projectKey }: { projectKey: string }) {
                 />
               </div>
             ) : null}
+
+            {bulkUpdate.isPending ? <Spinner className="ml-1" /> : null}
 
             <Button
               variant="ghost"

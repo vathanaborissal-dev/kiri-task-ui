@@ -1,9 +1,10 @@
 'use client';
 
-import { MessageSquare, Paperclip, Workflow } from 'lucide-react';
+import { Bug, MessageSquare, Paperclip, Workflow } from 'lucide-react';
 import Link from 'next/link';
 import { AvatarStack } from '@/components/common/user-avatar';
 import { DueDateBadge, LabelChips, PhaseBadge, PriorityBadge, QaBadge } from '@/components/common/badges';
+import { ProgressBar } from '@/components/tasks/progress-field';
 import { Checkbox } from '@/components/ui/checkbox';
 import { STATUS_CATEGORY_RING } from '@/lib/constants';
 import type { Task } from '@/lib/types';
@@ -81,11 +82,26 @@ export function TaskRow({
             </Link>
           ) : null}
           <span className="text-[11px] text-muted-foreground">{task.status.name}</span>
+          {/* Cancelled work has no meaningful percentage, and a cancelled task
+              showing "40%" reads as if it were still going. */}
+          {task.status.category !== 'CANCELED' ? (
+            <ProgressBar value={done ? 100 : task.progress} />
+          ) : null}
           <PriorityBadge priority={task.priority} compact />
           {task.phase ? <PhaseBadge phase={task.phase} /> : null}
           <QaBadge status={task.qaStatus} />
           <DueDateBadge date={task.dueDate} />
           <LabelChips labels={task.labels} max={2} />
+          {task.issue ? (
+            <Link
+              href={`/projects/${task.project.key}/issues/${task.issue.key}`}
+              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+              title={task.issue.title}
+            >
+              <Bug className="size-3" aria-hidden />
+              {task.issue.key}
+            </Link>
+          ) : null}
           {task.counts.subtasks > 0 ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
               <Workflow className="size-3" aria-hidden />

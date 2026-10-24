@@ -199,7 +199,12 @@ export function KanbanBoard({
         delete next[task.id];
         return next;
       });
-      toast.error(caught instanceof Error ? caught.message : 'Could not move that task');
+      // A refusal from the issue gate names the issue and the way out ("KIRI-I4
+      // is closed — reopen it before…"), which is longer than the default
+      // toast stays up for.
+      toast.error(caught instanceof Error ? caught.message : 'Could not move that task', {
+        duration: 6000,
+      });
     }
   };
 

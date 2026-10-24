@@ -3,7 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, qs } from '@/lib/api';
 import { isSampleProject, sampleIssues } from '@/lib/sample-project';
-import type { Grouped, Issue, IssueStatus, Paged } from '@/lib/types';
+import type {
+  Grouped,
+  Issue,
+  IssueStatus,
+  IssueTransitionRow,
+  IssueTransitions,
+  Paged,
+} from '@/lib/types';
 
 export type IssueFilters = {
   projectId?: string;
@@ -19,7 +26,8 @@ export type IssueFilters = {
   unassigned?: boolean;
   overdue?: boolean;
   openOnly?: boolean;
-  sort?: 'createdAt' | 'updatedAt' | 'severity' | 'priority' | 'dueDate' | 'status';
+  hasTasks?: boolean;
+  sort?: 'createdAt' | 'updatedAt' | 'severity' | 'priority' | 'dueDate' | 'startDate' | 'status';
   order?: 'asc' | 'desc';
   groupBy?: 'none' | 'status' | 'severity' | 'assignee' | 'phase';
   page?: number;
@@ -30,6 +38,8 @@ export const issueKeys = {
   all: ['issues'] as const,
   list: (filters: IssueFilters) => ['issues', 'list', filters] as const,
   detail: (idOrKey: string) => ['issues', 'detail', idOrKey] as const,
+  transitions: (idOrKey: string) => ['issues', 'transitions', idOrKey] as const,
+  workflow: ['issues', 'workflow'] as const,
 };
 
 export const useIssues = (filters: IssueFilters = {}, enabled = true) =>
@@ -56,6 +66,31 @@ export const useIssue = (idOrKey: string | undefined) =>
     enabled: Boolean(idOrKey),
   });
 
+/**
+ * The moves this viewer can make on this issue.
+ *
+ * Asked of the server rather than worked out in the browser: the table and the
+ * permissions behind it are the API's, and a UI that guessed would either offer
+ * a button that 409s or hide one that would have worked.
+ */
+export const useIssueTransitions = (idOrKey: string | undefined) =>
+  useQuery({
+    queryKey: issueKeys.transitions(idOrKey ?? ''),
+    queryFn: () =>
+      api<{ data: IssueTransitions }>(`/issues/${idOrKey}/transitions`).then((r) => r.data),
+    enabled: Boolean(idOrKey),
+  });
+
+/** The whole status table, for the "who can change what" reference. */
+export const useIssueWorkflow = (enabled = true) =>
+  useQuery({
+    queryKey: issueKeys.workflow,
+    queryFn: () => api<{ data: IssueTransitionRow[] }>('/issues/workflow').then((r) => r.data),
+    // Pure code-side data: it only changes when the app is redeployed.
+    staleTime: 60 * 60 * 1000,
+    enabled,
+  });
+
 const useIssueInvalidator = () => {
   const queryClient = useQueryClient();
   return (idOrKey?: string) => {
@@ -63,7 +98,10 @@ const useIssueInvalidator = () => {
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     void queryClient.invalidateQueries({ queryKey: ['projects'] });
     void queryClient.invalidateQueries({ queryKey: ['activity'] });
-    if (idOrKey) void queryClient.invalidateQueries({ queryKey: issueKeys.detail(idOrKey) });
+    if (idOrKey) {
+      void queryClient.invalidateQueries({ queryKey: issueKeys.detail(idOrKey) });
+      void queryClient.invalidateQueries({ queryKey: issueKeys.transitions(idOrKey) });
+    }
   };
 };
 
@@ -109,16 +147,40 @@ export const useDeleteIssue = () => {
   });
 };
 
+export const useBulkUpdateIssues = () => {
+  const invalidate = useIssueInvalidator();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { issueIds: string[] } & Record<string, unknown>) =>
+      api<{ updated: number; moved: number }>('/issues/bulk', { method: 'POST', body }),
+    onSuccess: () => {
+      invalidate();
+      // A bulk status move can cancel tasks, so their lists are stale too.
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+};
+
 export const useCreateTaskFromIssue = () => {
   const invalidate = useIssueInvalidator();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (idOrKey: string) =>
+    mutationFn: ({
+      idOrKey,
+      ...body
+    }: {
+      idOrKey: string;
+      title?: string;
+      assigneeIds?: string[];
+      startDate?: string | null;
+      dueDate?: string | null;
+    }) =>
       api<{ data: { id: string; key: string }; url: string }>(`/issues/${idOrKey}/create-task`, {
         method: 'POST',
+        body,
       }),
     onSuccess: (_d, v) => {
-      invalidate(v);
+      invalidate(v.idOrKey);
       void queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });

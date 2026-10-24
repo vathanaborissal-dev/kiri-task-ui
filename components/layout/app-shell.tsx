@@ -53,7 +53,13 @@ export function AppShell({
       <TourProvider>
         <SidebarProvider defaultOpen={sidebarDefaultOpen}>
           <AppSidebar variant={sidebarVariant} />
-          <SidebarInset className="min-w-0 overflow-hidden">
+          {/* `overflow-x-clip`, not `overflow-hidden`: the inset still has to
+              contain a wide board or table, but `hidden` makes this element a
+              scroll container, and `position: sticky` then resolves against a
+              box that never scrolls — which is why the top bar did not stick.
+              `clip` does the same clipping without becoming a scroll port, and
+              leaves `overflow-y` visible so the page scrolls on the document. */}
+          <SidebarInset className="min-w-0 overflow-x-clip">
             <Topbar />
             <div className="app-content flex-1 px-4 py-5 sm:px-6 lg:px-8">{children}</div>
           </SidebarInset>

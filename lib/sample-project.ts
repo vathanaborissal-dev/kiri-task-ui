@@ -111,6 +111,8 @@ const task = (
   completedAt: null,
   estimateHours: null,
   spentHours: null,
+  progress: byKey(statusKey).category === 'DONE' ? 100 : 0,
+  issue: null,
   position: n,
   createdAt: day(-14),
   updatedAt: day(-1),
@@ -287,6 +289,7 @@ const issue = (n: number, title: string, over: Partial<Issue> = {}): Issue => ({
   status: 'OPEN',
   severity: 'MAJOR',
   priority: 'MEDIUM',
+  startDate: null,
   dueDate: null,
   resolvedAt: null,
   closedAt: null,
@@ -300,7 +303,7 @@ const issue = (n: number, title: string, over: Partial<Issue> = {}): Issue => ({
   task: null,
   release: null,
   labels: [],
-  counts: { comments: 0, attachments: 0, hotfixes: 0 },
+  counts: { comments: 0, attachments: 0, hotfixes: 0, tasks: 0 },
   ...over,
 });
 
@@ -312,7 +315,7 @@ export const sampleIssues: Paged<Issue> = {
       status: 'IN_PROGRESS',
       assignee: ARUN,
       phase: PHASES[3]!,
-      counts: { comments: 4, attachments: 1, hotfixes: 1 },
+      counts: { comments: 4, attachments: 1, hotfixes: 1, tasks: 2 },
     }),
     issue(2, 'Date picker shows the wrong month in Khmer', {
       severity: 'MINOR',

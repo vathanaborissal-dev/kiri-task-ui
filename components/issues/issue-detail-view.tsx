@@ -9,7 +9,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  Wrench,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -27,6 +26,12 @@ import { CenteredSpinner } from '@/components/common/loading';
 import { ErrorState } from '@/components/common/error-state';
 import { RichText } from '@/components/common/rich-text';
 import { AvatarStack, UserAvatar } from '@/components/common/user-avatar';
+import {
+  IssueStatusButtons,
+  IssueStatusSelect,
+  IssueWorkflowHint,
+} from '@/components/issues/issue-status-control';
+import { IssueTasks } from '@/components/issues/issue-tasks';
 import { CreateHotfixDialog } from '@/components/releases/create-hotfix-dialog';
 import { IconButton } from '@/components/common/icon-button';
 import { Button } from '@/components/ui/button';
@@ -43,20 +48,14 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  HOTFIX_STATUS_META,
-  ISSUE_STATUS_META,
-  ISSUE_STATUS_ORDER,
-  PRIORITY_META,
-  SEVERITY_META,
-} from '@/lib/constants';
-import { formatDateTime } from '@/lib/format';
+import { HOTFIX_STATUS_META, ISSUE_STATUS_META, PRIORITY_META, SEVERITY_META } from '@/lib/constants';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { useActivity, useDeleteAttachment, useUploadAttachments } from '@/lib/hooks/use-collab';
 import {
   useChangeIssueStatus,
-  useCreateTaskFromIssue,
   useDeleteIssue,
   useIssue,
+  useIssueTransitions,
   useToggleIssueWatch,
   useUpdateIssue,
 } from '@/lib/hooks/use-issues';
@@ -78,12 +77,12 @@ export function IssueDetailView({
   const { data: project } = useProject(projectKey);
   const { data: members } = useProjectMembers(projectKey);
   const { data: activity } = useActivity({ issueId: issueKey }, Boolean(issue));
+  const { data: transitions } = useIssueTransitions(issueKey);
 
   const updateIssue = useUpdateIssue();
   const changeStatus = useChangeIssueStatus();
   const deleteIssue = useDeleteIssue();
   const toggleWatch = useToggleIssueWatch();
-  const createTask = useCreateTaskFromIssue();
   const uploadAttachments = useUploadAttachments();
   const deleteAttachment = useDeleteAttachment();
 
@@ -114,7 +113,11 @@ export function IssueDetailView({
       await changeStatus.mutateAsync({ idOrKey: issue.key, status: status as 'OPEN' });
       toast.success(`${issue.key} is now ${ISSUE_STATUS_META[status as 'OPEN'].label}`);
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : 'Could not change the status');
+      // The API's refusal already names the rule and the roles that could do
+      // it, so it is shown as-is rather than replaced with "could not".
+      toast.error(caught instanceof Error ? caught.message : 'Could not change the status', {
+        duration: 6000,
+      });
     }
   };
 
@@ -146,24 +149,6 @@ export function IssueDetailView({
             {watching ? <EyeOff className="size-3.5" aria-hidden /> : <Eye className="size-3.5" aria-hidden />}
             {watching ? 'Unwatch' : 'Watch'}
           </Button>
-
-          {can('task:create') && !issue.task ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              disabled={createTask.isPending}
-              onClick={async () => {
-                const result = await createTask.mutateAsync(issue.key);
-                toast.success(`${result.data.key} created`, {
-                  action: { label: 'Open', onClick: () => router.push(result.url) },
-                });
-              }}
-            >
-              <Wrench className="size-3.5" aria-hidden />
-              Create fix task
-            </Button>
-          ) : null}
 
           {can('hotfix:create') ? (
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setHotfixOpen(true)}>
@@ -275,6 +260,11 @@ export function IssueDetailView({
                 <IssueStatusBadge status={issue.status} />
                 <SeverityBadge severity={issue.severity} />
                 <PhaseBadge phase={issue.phase} />
+                {issue.startDate ? (
+                  <Badge variant="outline" className="rounded-full text-[11px] font-normal">
+                    Starts {formatDate(issue.startDate)}
+                  </Badge>
+                ) : null}
                 <DueDateBadge date={issue.dueDate} />
                 {issue.reopenCount > 0 ? (
                   <Badge variant="outline" className="rounded-full text-[11px]">
@@ -284,19 +274,13 @@ export function IssueDetailView({
               </div>
 
               {can('issue:change_status') ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {ISSUE_STATUS_ORDER.filter((status) => status !== issue.status).map((status) => (
-                    <Button
-                      key={status}
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs"
-                      disabled={changeStatus.isPending}
-                      onClick={() => void moveTo(status)}
-                    >
-                      {ISSUE_STATUS_META[status].label}
-                    </Button>
-                  ))}
+                <div className="space-y-1.5">
+                  <IssueStatusButtons
+                    transitions={transitions}
+                    pending={changeStatus.isPending}
+                    onMove={(status) => void moveTo(status)}
+                  />
+                  <IssueWorkflowHint />
                 </div>
               ) : null}
 
@@ -335,6 +319,17 @@ export function IssueDetailView({
               </section>
             </>
           )}
+
+          <Separator />
+
+          <IssueTasks
+            issue={issue}
+            project={project}
+            members={members ?? []}
+            permissions={permissions}
+          />
+
+          <Separator />
 
           <section className="space-y-2">
             <div className="flex items-center justify-between">
@@ -416,22 +411,12 @@ export function IssueDetailView({
             <CardContent className="space-y-4 pt-5">
               {row(
                 'Status',
-                <Select
-                  value={issue.status}
-                  onValueChange={(status) => void moveTo(status)}
+                <IssueStatusSelect
+                  status={issue.status}
+                  transitions={transitions}
                   disabled={!can('issue:change_status')}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ISSUE_STATUS_ORDER.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {ISSUE_STATUS_META[status].label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>,
+                  onMove={(status) => void moveTo(status)}
+                />,
               )}
 
               {row(
@@ -516,32 +501,37 @@ export function IssueDetailView({
                 </Select>,
               )}
 
-              {row(
-                'Fix by',
-                <DateField
-                  value={issue.dueDate}
-                  onChange={(dueDate) => void patch({ dueDate })}
-                  disabled={!can('issue:update')}
-                  placeholder="No deadline"
-                />,
-              )}
+              {/* Start and end sit together: a deadline without a start date
+                  says when it is late, not when anybody should begin. */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {row(
+                  'Start date',
+                  <DateField
+                    value={issue.startDate}
+                    onChange={(startDate) => void patch({ startDate })}
+                    disabled={!can('issue:update')}
+                    placeholder="Not set"
+                    label="Start date"
+                  />,
+                )}
+                {row(
+                  'Fix by',
+                  <DateField
+                    value={issue.dueDate}
+                    onChange={(dueDate) => void patch({ dueDate })}
+                    disabled={!can('issue:update')}
+                    placeholder="No deadline"
+                    label="Fix by"
+                  />,
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {issue.task || (issue.hotfixes ?? []).length > 0 ? (
+          {(issue.hotfixes ?? []).length > 0 ? (
             <Card>
               <CardContent className="space-y-2 pt-5">
-                <h3 className="text-xs font-medium text-muted-foreground">Linked work</h3>
-                {issue.task ? (
-                  <Link
-                    href={`/projects/${projectKey}/tasks/${issue.task.key}`}
-                    className="flex items-center gap-2 rounded-md border px-2.5 py-2 text-sm hover:bg-accent/40"
-                  >
-                    <Wrench className="size-3.5 text-muted-foreground" aria-hidden />
-                    <span className="font-mono text-xs text-muted-foreground">{issue.task.key}</span>
-                    <span className="min-w-0 flex-1 truncate">{issue.task.title}</span>
-                  </Link>
-                ) : null}
+                <h3 className="text-xs font-medium text-muted-foreground">Hotfixes</h3>
                 {(issue.hotfixes ?? []).map((hotfix) => (
                   <Link
                     key={hotfix.id}

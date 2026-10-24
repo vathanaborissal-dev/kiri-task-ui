@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CenteredSpinner } from '@/components/common/loading';
 import { ErrorState } from '@/components/common/error-state';
 import { PageHeader } from '@/components/common/page-header';
+import { IssueWorkflowTable } from '@/components/issues/issue-workflow-table';
 import { Badge } from '@/components/ui/badge';
 import { IconButton } from '@/components/common/icon-button';
 import { Button } from '@/components/ui/button';
@@ -125,6 +126,11 @@ export function RolesView() {
           ) : undefined
         }
       />
+
+      {/* The permission matrix says who holds `issue:close`; it cannot say that
+          a closed issue has to be reopened before it moves. That rule lives in
+          the workflow table, so it is spelled out here next to the roles. */}
+      <IssueWorkflowTable />
 
       <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="space-y-4">

@@ -2,14 +2,18 @@
 
 import { Bug, Filter, Search, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/common/empty-state';
-import { ListSkeleton } from '@/components/common/loading';
+import { DateField } from '@/components/common/date-field';
+import { ListSkeleton, Spinner } from '@/components/common/loading';
 import { ErrorState } from '@/components/common/error-state';
 import { MultiSelect } from '@/components/common/multi-select';
 import { CreateIssueDialog } from '@/components/issues/create-issue-dialog';
 import { IssueRow } from '@/components/issues/issue-row';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,7 +26,13 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ISSUE_STATUS_META, PRIORITY_META, SEVERITY_META } from '@/lib/constants';
-import { useGroupedIssues, useIssues, type IssueFilters } from '@/lib/hooks/use-issues';
+import {
+  useBulkUpdateIssues,
+  useGroupedIssues,
+  useIssueWorkflow,
+  useIssues,
+  type IssueFilters,
+} from '@/lib/hooks/use-issues';
 import type { ProjectDetail, ProjectMember } from '@/lib/types';
 
 export function IssueListView({
@@ -46,6 +56,7 @@ export function IssueListView({
   });
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
 
   const scoped: IssueFilters = { ...filters, ...(project ? { projectId: project.id } : {}) };
   const grouped = filters.groupBy && filters.groupBy !== 'none';
@@ -53,8 +64,68 @@ export function IssueListView({
   const flat = useIssues(scoped, !grouped);
   const groups = useGroupedIssues(scoped, Boolean(grouped));
   const query = grouped ? groups : flat;
+  const bulkUpdate = useBulkUpdateIssues();
+  // Fetched once the first issue is ticked rather than on every list load: it
+  // is static, cached for an hour, and only the bulk bar needs it.
+  const { data: workflow, isLoading: workflowLoading } = useIssueWorkflow(selected.length > 0);
 
   const set = (patch: Partial<IssueFilters>) => setFilters({ ...filters, ...patch, page: 1 });
+
+  const permissions = new Set(project?.myPermissions ?? []);
+  const can = (permission: string) => permissions.has('*') || permissions.has(permission);
+  // Bulk editing is per project: a status move has to be checked against one
+  // project's roles, and phases and people do not exist across projects.
+  const selectable = Boolean(project) && can('issue:view');
+
+  const toggle = (id: string, isSelected: boolean) =>
+    setSelected((current) =>
+      isSelected ? [...current, id] : current.filter((value) => value !== id),
+    );
+
+  const visible = grouped
+    ? (groups.data?.data ?? []).flatMap((group) => group.issues ?? [])
+    : (flat.data?.data ?? []);
+  const visibleIds = visible.map((issue) => issue.id);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.includes(id));
+
+  /**
+   * The statuses every selected issue could legally reach.
+   *
+   * Intersected rather than unioned: offering a status that only some of the
+   * selection can take would move half the list and refuse the rest, and the
+   * API checks all of them before writing anything anyway. A move the viewer's
+   * role cannot make is left out for the same reason.
+   */
+  const bulkStatuses = (() => {
+    if (!workflow || selected.length === 0) return [];
+    const chosen = visible.filter((issue) => selected.includes(issue.id));
+    if (chosen.length === 0) return [];
+
+    const sets = chosen.map((issue) => {
+      const row = workflow.find((entry) => entry.from === issue.status);
+      return new Set(
+        (row?.to ?? [])
+          .filter((target) => !target.requires || can(target.requires))
+          .map((target) => target.status),
+      );
+    });
+    const [first, ...rest] = sets;
+    return [...(first ?? [])].filter((status) => rest.every((set) => set.has(status)));
+  })();
+
+  const applyBulk = async (patch: Record<string, unknown>) => {
+    try {
+      const result = await bulkUpdate.mutateAsync({ issueIds: selected, ...patch });
+      toast.success(`${result.updated} ${result.updated === 1 ? 'issue' : 'issues'} updated`);
+      setSelected([]);
+    } catch (error) {
+      // Workflow refusals explain the rule, so they are shown verbatim.
+      toast.error(error instanceof Error ? error.message : 'Could not update those issues', {
+        duration: 6000,
+      });
+    }
+  };
 
   const activeCount = [
     filters.status?.length,
@@ -257,6 +328,138 @@ export function IssueListView({
         ) : null}
       </div>
 
+      {selectable && visibleIds.length > 0 ? (
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={allVisibleSelected}
+            onCheckedChange={(value) => setSelected(value === true ? visibleIds : [])}
+            aria-label="Select every issue shown"
+          />
+          {allVisibleSelected
+            ? `All ${visibleIds.length} shown selected`
+            : `Select all ${visibleIds.length} shown`}
+        </label>
+      ) : null}
+
+      {selected.length > 0 ? (
+        <Card className="border-primary/40 bg-accent/30">
+          <CardContent className="flex flex-wrap items-center gap-2 py-3">
+            <span className="text-sm font-medium">{selected.length} selected</span>
+
+            {can('issue:change_status') ? (
+              <Select onValueChange={(status) => void applyBulk({ status })}>
+                <SelectTrigger size="sm" className="h-8 w-44">
+                  <SelectValue
+                    placeholder={
+                      workflowLoading
+                        ? 'Loading…'
+                        : bulkStatuses.length
+                          ? 'Move to status'
+                          : 'No shared move'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {workflowLoading ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading…</div>
+                  ) : bulkStatuses.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No status all of these can reach — a settled issue has to be reopened on its
+                      own first. Narrow the selection.
+                    </div>
+                  ) : (
+                    bulkStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`size-2 rounded-full ${ISSUE_STATUS_META[status].dot}`}
+                            aria-hidden
+                          />
+                          {ISSUE_STATUS_META[status].label}
+                        </span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {can('issue:update') ? (
+              <Select onValueChange={(severity) => void applyBulk({ severity })}>
+                <SelectTrigger size="sm" className="h-8 w-36">
+                  <SelectValue placeholder="Set severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(SEVERITY_META).map(([value, meta]) => (
+                    <SelectItem key={value} value={value}>
+                      {meta.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {can('issue:update') ? (
+              <Select onValueChange={(priority) => void applyBulk({ priority })}>
+                <SelectTrigger size="sm" className="h-8 w-36">
+                  <SelectValue placeholder="Set priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PRIORITY_META).map(([value, meta]) => (
+                    <SelectItem key={value} value={value}>
+                      {meta.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {can('issue:assign') && members ? (
+              <Select
+                onValueChange={(value) =>
+                  void applyBulk({ assigneeId: value === 'none' ? null : value })
+                }
+              >
+                <SelectTrigger size="sm" className="h-8 w-40">
+                  <SelectValue placeholder="Assign to…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassign</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.user.id} value={member.user.id}>
+                      {member.user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {can('issue:update') ? (
+              <div className="w-36">
+                <DateField
+                  value={null}
+                  onChange={(dueDate) => (dueDate ? void applyBulk({ dueDate }) : undefined)}
+                  placeholder="Set end date"
+                  label="End date for the selected issues"
+                />
+              </div>
+            ) : null}
+
+            {bulkUpdate.isPending ? <Spinner className="ml-1" /> : null}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-8 gap-1.5"
+              onClick={() => setSelected([])}
+            >
+              <X className="size-3.5" aria-hidden />
+              Clear
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {query.isError ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : query.isLoading ? (
@@ -280,7 +483,17 @@ export function IssueListView({
               </div>
               <div className="space-y-2">
                 {(group.issues ?? []).map((issue) => (
-                  <IssueRow key={issue.id} issue={issue} showProject={showProject} />
+                  <IssueRow
+                    key={issue.id}
+                    issue={issue}
+                    showProject={showProject}
+                    {...(selectable
+                      ? {
+                          selected: selected.includes(issue.id),
+                          onSelectedChange: (value: boolean) => toggle(issue.id, value),
+                        }
+                      : {})}
+                  />
                 ))}
               </div>
             </section>
@@ -308,7 +521,17 @@ export function IssueListView({
         <>
           <div className="space-y-2">
             {flat.data!.data.map((issue) => (
-              <IssueRow key={issue.id} issue={issue} showProject={showProject} />
+              <IssueRow
+                key={issue.id}
+                issue={issue}
+                showProject={showProject}
+                {...(selectable
+                  ? {
+                      selected: selected.includes(issue.id),
+                      onSelectedChange: (value: boolean) => toggle(issue.id, value),
+                    }
+                  : {})}
+              />
             ))}
           </div>
 

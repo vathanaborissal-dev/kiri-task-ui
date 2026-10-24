@@ -2,6 +2,8 @@
 
 import { DateField } from '@/components/common/date-field';
 import { MultiSelect } from '@/components/common/multi-select';
+import { ProgressField } from '@/components/tasks/progress-field';
+import { TaskHelpers } from '@/components/tasks/task-helpers';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,6 +27,7 @@ export function TaskProperties({
   project,
   members,
   permissions,
+  currentUserId,
   onPatch,
   pending,
 }: {
@@ -32,10 +35,16 @@ export function TaskProperties({
   project: ProjectDetail;
   members: ProjectMember[];
   permissions: Set<string>;
+  /** Used to decide who may report progress and who may leave the task. */
+  currentUserId?: string;
   onPatch: (patch: TaskPatch) => void;
   pending?: boolean;
 }) {
   const can = (permission: string) => permissions.has('*') || permissions.has(permission);
+  const isAssignee = currentUserId
+    ? task.assignees.some((assignee) => assignee.id === currentUserId)
+    : false;
+  const done = task.status.category === 'DONE';
 
   const row = (label: string, control: React.ReactNode) => (
     <div className="space-y-1.5">
@@ -73,21 +82,51 @@ export function TaskProperties({
         </Select>,
       )}
 
+      {/* Directly under the status: the two describe the same thing, and a
+          task in Done at 40% is the contradiction this pairing prevents.
+          Whoever is doing the work may report it — requiring `task:update`
+          would let a developer move the card but not say how far along it is,
+          which is the one number their lead reads. */}
       {row(
-        'Assignees',
-        <MultiSelect
-          options={members.map((member) => ({
-            value: member.user.id,
-            label: member.user.name,
-            description: member.role.name,
-          }))}
-          selected={task.assignees.map((a) => a.id)}
-          onChange={(assigneeIds) => onPatch({ assigneeIds })}
-          placeholder="Unassigned"
-          label="Assignees"
-          disabled={!can('task:assign') || pending}
+        'Progress',
+        <ProgressField
+          value={done ? 100 : task.progress}
+          onChange={(progress) => onPatch({ progress })}
+          disabled={!can('task:update') && !isAssignee}
+          lockedToDone={done}
+          pending={pending}
         />,
       )}
+
+      {/* The list of people, with "ask for help" — a second developer joining
+          an existing task is a different act from reassigning it. */}
+      {row(
+        'Working on it',
+        <TaskHelpers
+          task={task}
+          members={members}
+          currentUserId={currentUserId}
+          canAssign={can('task:assign')}
+        />,
+      )}
+
+      {can('task:assign')
+        ? row(
+            'Replace assignees',
+            <MultiSelect
+              options={members.map((member) => ({
+                value: member.user.id,
+                label: member.user.name,
+                description: member.role.name,
+              }))}
+              selected={task.assignees.map((a) => a.id)}
+              onChange={(assigneeIds) => onPatch({ assigneeIds })}
+              placeholder="Unassigned"
+              label="Assignees"
+              disabled={pending}
+            />,
+          )
+        : null}
 
       {row(
         'Priority',

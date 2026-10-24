@@ -78,7 +78,12 @@ export function AppearancePanel() {
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
+        {/* `min-h-0` is what makes this scroll. A flex child defaults to
+            `min-height: auto`, so `flex-1` alone grew the scroller to its own
+            content height: the panel overflowed the sheet, the sections below
+            Typeface were unreachable and the Reset button was pushed off the
+            bottom of the screen. */}
+        <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-6 p-4">
             <section className="space-y-2.5">
               <SectionLabel>Colour mode</SectionLabel>
